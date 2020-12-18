@@ -1,0 +1,113 @@
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+            <robotNamespace>/abb_irb</robotNamespace>
+        </plugin>
+    </gazebo>
+            <!-- Link1 -->
+    <gazebo reference="base_link">
+         <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="link_1">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="link_2">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="link_3">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="link_4">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="link_5">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="link_6">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="kinect_frame">
+        <material>Gazebo/Orange</material>
+    </gazebo>
+    <gazebo reference="kinect_mesh">
+        <material>Gazebo/Black</material>
+    </gazebo>
+
+    <xacro:property name="link_name" value="tool0"/>
+    <xacro:property name="camera_name" value="kinect"/>
+
+
+    <gazebo reference="tool0">
+        <material>Gazebo/Black</material>
+        <sensor name="kinect" type="depth">
+            <update_rate>10.0</update_rate>
+            <visualize>true</visualize>
+            <always_on>1</always_on>
+            <camera name="depth_cam">
+                <horizontal_fov>1</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.05</near>
+                    <far>30</far>
+                </clip>
+                <plugin name="camera_plugin" filename="libgazebo_ros_openni_kinect.so">
+                  <baseline>0.2</baseline>
+                  <alwaysOn>true</alwaysOn>
+                  <!-- Keep this zero, update_rate in the parent <sensor> tag
+                    will control the frame rate. -->
+                  <updateRate>0.0</updateRate>
+                  <cameraName>camera_ir</cameraName>
+                  <imageTopicName>/camera/color/image_raw</imageTopicName>
+                  <cameraInfoTopicName>/camera/color/camera_info</cameraInfoTopicName>
+                  <depthImageTopicName>/camera/depth/image_raw</depthImageTopicName>
+                  <depthImageCameraInfoTopicName>/camera/depth/camera_info</depthImageCameraInfoTopicName>
+                  <pointCloudTopicName>/camera/depth/points</pointCloudTopicName>
+                  <frameName>tool0</frameName>
+                  <pointCloudCutoff>0.5</pointCloudCutoff>
+                  <pointCloudCutoffMax>3.0</pointCloudCutoffMax>
+                  <distortionK1>0</distortionK1>
+                  <distortionK2>0</distortionK2>
+                  <distortionK3>0</distortionK3>
+                  <distortionT1>0</distortionT1>
+                  <distortionT2>0</distortionT2>
+                  <CxPrime>0</CxPrime>
+                  <Cx>0</Cx>
+                  <Cy>0</Cy>
+                  <focalLength>0</focalLength>
+                  <hackBaseline>0</hackBaseline>
+                </plugin>
+            </camera>
+            <plugin name="kinect_controller" filename="libgazebo_ros_openni_kinect.so">
+                <!--<baseline>0.2</baseline>-->
+                <alwaysOn>true</alwaysOn>
+                <cameraName>kinect_ir</cameraName>
+                <imageTopicName>/kinect/rgb/image_raw</imageTopicName>
+                <cameraInfoTopicName>/kinect/depth/camera_info</cameraInfoTopicName>
+                <depthImageTopicName>/kinect/depth/image_raw</depthImageTopicName>
+                <depthImageInfoTopicName>/kinect/depth/depth_camera_info</depthImageInfoTopicName>
+                <pointCloudTopicName>/kinect/depth/points</pointCloudTopicName>
+                <frameName>tool0</frameName>
+                <pointCloudCutoff>0.4</pointCloudCutoff>
+                <pointCloudCutoffMax>5.0</pointCloudCutoffMax>
+                <distortionK1>0.0000000</distortionK1>
+                <distortionK2>0.0000000</distortionK2>
+                <distortionK3>0.0000000</distortionK3>
+                <distortionT1>0.0000000</distortionT1>
+                <distortionT2>0.0000000</distortionT2>
+                <CxPrime>0</CxPrime>
+                <Cx>0</Cx>
+                <Cy>0</Cy>
+                <focalLength>0</focalLength>
+                <hackBaseline>0</hackBaseline>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+
+
+
+</robot>

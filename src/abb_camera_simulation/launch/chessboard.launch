@@ -1,0 +1,6 @@
+<launch>
+    <node name="spawned_object_name" pkg="gazebo_ros" type="spawn_model"
+          args="-urdf -file $(find abb_camera_simulation)/models/checkerboard_horizontal.urdf -model
+     object_name_from_gazebo_perspective  -x 1.1 -y 0 -z 0"
+          respawn="false" output="screen" />
+</launch>

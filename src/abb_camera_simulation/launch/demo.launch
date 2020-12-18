@@ -1,0 +1,20 @@
+<launch>
+  <rosparam command="load" file="$(find abb_camera_simulation)/config/joint_names_irb4600.yaml"/>
+
+  <include file="$(find abb_camera_sim)/launch/planning_context.launch" >
+    <arg name="load_robot_description" value="true" />
+  </include>
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="/use_gui" value="false"/>
+    <rosparam param="/source_list">[/joint_states]</rosparam>
+  </node>
+
+  <include file="$(find abb_camera_sim)/launch/move_group.launch">
+    <arg name="publish_monitored_planning_scene" value="true" />
+  </include>
+
+  <include file="$(find abb_camera_sim)/launch/moveit_rviz.launch">
+    <arg name="rviz_config" value="true"/>
+  </include>
+</launch>

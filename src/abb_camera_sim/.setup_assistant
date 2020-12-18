@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: abb_camera_simulation
+    relative_path: urdf/abb_irb4600_60_205.urdf
+    xacro_args: ""
+  SRDF:
+    relative_path: config/abb_irb4600_60_205.srdf
+  CONFIG:
+    author_name: todo
+    author_email: todo@mail.com
+    generated_timestamp: 1606215634

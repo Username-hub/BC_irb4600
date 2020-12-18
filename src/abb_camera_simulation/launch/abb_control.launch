@@ -1,0 +1,15 @@
+<launch>
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find abb_camera_simulation)/config/abb_irb_4600.yaml" command="load"/>
+
+  <!-- load the controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" ns="/abb_irb" args="joint_state_controller
+          joint1_position_controller
+          joint2_position_controller
+          joint3_position_controller
+          joint4_position_controller
+          joint5_position_controller
+          joint6_position_controller"/>
+</launch>

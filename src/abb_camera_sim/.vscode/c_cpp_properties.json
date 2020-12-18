@@ -1,0 +1,20 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/opt/ros/melodic/include/**",
+        "/home/user/ws_moveit/src/abb_driver/include/**",
+        "/home/user/ws_moveit/src/industrial_core/industrial_robot_client/include/**",
+        "/home/user/ws_moveit/src/industrial_core/industrial_trajectory_filters/include/**",
+        "/home/user/ws_moveit/src/industrial_core/industrial_utils/include/**",
+        "/home/user/ws_moveit/src/industrial_core/simple_message/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ]
+}

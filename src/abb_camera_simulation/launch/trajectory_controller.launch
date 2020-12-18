@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="arm_name" default="/abb_irb"/>
+  <!-- upload arm and gripper controller parameters -->
+
+
+  <rosparam file="$(find abb_camera_simulation)/config/abb_irb_control.yaml" command="load" ns="$(arg arm_name)"/>
+  <rosparam file="$(find abb_camera_simulation)/config/joint_state_controller.yaml" command="load" ns="$(arg arm_name)"/>
+
+  <node pkg="controller_manager" type="spawner" name="joint_state_controller_spawner" ns = "$(arg arm_name)" args="joint_state_controller" respawn="false" output="screen"/>
+  <!-- spawn arm controller -->
+  <node pkg="controller_manager" type="spawner" name="kv01_arm_controller_spawner" ns="$(arg arm_name)" args="abb_irb" respawn="false" output="screen" />
+
+</launch>
