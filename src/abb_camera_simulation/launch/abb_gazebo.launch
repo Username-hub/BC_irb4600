@@ -1,11 +1,12 @@
 <launch>
 
-  <include file="$(find abb_camera_simulation)/launch/load_irb4600.launch" /><!-- these are the arguments you can pass this launch file, for example paused:=true -->
+   <include file="$(find abb_camera_simulation)/launch/load_irb4600.launch" /><!-- these are the arguments you can pass this launch file, for example paused:=true-->
 <arg name="paused" default="false"/>
 <arg name="use_sim_time" default="true"/>
 <arg name="gui" default="true"/>
 <arg name="headless" default="false"/>
 <arg name="debug" default="false"/>
+  <arg name="urdf_path" default="$(find abb_camera_simulation)/urdf/abb_irb4600_60_205.urdf"/>
 
 <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
 <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -18,11 +19,13 @@
 </include>
 
 <!-- Load the URDF into the ROS Parameter Server -->
-
+<!--<param name="robot_description" textfile="$(arg urdf_path)" />-->
 
 <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
-<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-  args="-urdf -model abb_irb -param robot_description"/>
+<!--<node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" args="-urdf -param robot_description -model robot -x 0 -y 0 -z 0"
+  respawn="false" output="screen" />-->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+    args="-urdf -model abb_irb -param robot_description"/>
 
 <include file="$(find abb_camera_simulation)/launch/trajectory_controller.launch" />
 

@@ -8,6 +8,9 @@
   <!-- By default, we are not in debug mode -->
   <arg name="debug" default="false" />
 
+  <!-- specify the planning pipeline -->
+  <arg name="pipeline" default="ompl" />
+
   <!--
   By default, hide joint_state_publisher's GUI
 
@@ -25,9 +28,10 @@
   <arg name="urdf_path" default="$(find abb_camera_simulation)/urdf/abb_irb4600_60_205.urdf"/>
 
   <!-- launch the gazebo simulator and spawn the robot -->
+  <!--<include file="$(find abb_camera_simulation)/launch/abb_gazebo.launch" >-->
   <include file="$(find abb_camera_sim)/launch/gazebo.launch" >
     <arg name="paused" value="$(arg paused)"/>
-    <arg name="gazebo_gui" value="$(arg gazebo_gui)"/>
+    <arg name="gui" value="$(arg gazebo_gui)"/>
     <arg name="urdf_path" value="$(arg urdf_path)"/>
   </include>
 
@@ -42,6 +46,7 @@
   <!-- We do not have a robot connected, so publish fake joint states -->
   <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
     <param name="use_gui" value="$(arg use_gui)"/>
+    #<rosparam param="source_list">[move_group/fake_controller_joint_states]</rosparam>
     <rosparam param="source_list">[abb_irb/joint_states]</rosparam>
   </node>
 
@@ -54,6 +59,7 @@
     <arg name="fake_execution" value="false"/>
     <arg name="info" value="true"/>
     <arg name="debug" value="$(arg debug)"/>
+    <arg name="pipeline" value="$(arg pipeline)"/>
   </include>
 
   <!-- Run Rviz and load the default config to see the state of the move_group node -->
