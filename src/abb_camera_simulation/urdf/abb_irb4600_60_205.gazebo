@@ -39,7 +39,7 @@
 
     <gazebo reference="tool0">
         <material>Gazebo/Black</material>
-        <sensor name="kinect_ros" type="depth">
+        <sensor name="kinect" type="depth">
             <update_rate>10.0</update_rate>
             <visualize>true</visualize>
             <always_on>1</always_on>
@@ -61,7 +61,7 @@
             <plugin name="kinect_controller" filename="libgazebo_ros_openni_kinect.so">
                 <baseline>0.2</baseline>
                 <alwaysOn>true</alwaysOn>
-                <cameraName>kinect_ros</cameraName>
+                <cameraName>kinect</cameraName>
                 <imageTopicName>/kinect/rgb/image_raw</imageTopicName>
                 <cameraInfoTopicName>/kinect/depth/camera_info</cameraInfoTopicName>
                 <depthImageTopicName>/kinect/depth/image_raw</depthImageTopicName>

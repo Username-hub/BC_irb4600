@@ -198,7 +198,7 @@
 
         <link name="${prefix}kinect_mesh">
             <visual>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="0 0 0" rpy="0 1.57 0" />
                 <geometry>
                     <mesh filename="package://abb_camera_simulation/meshes/kinect/visual/kinect_sensor.stl" scale ="0.001 0.001 0.001"/>
                 </geometry>
@@ -207,13 +207,13 @@
                 </material>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="0 0 0" rpy="0 1.57 0" />
                 <geometry>
                     <mesh filename="package://abb_camera_simulation/meshes/kinect/collision/kinect_sensor.stl" scale ="0.001 0.001 0.001"/>
                 </geometry>
             </collision>
             <inertial>
-                <origin xyz="0 0 0" rpy="0 1.57 0"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
                 <mass value="0.1"/>
                 <inertia
                         ixx="0.01" ixy="0.01" ixz="0.01"
@@ -288,24 +288,7 @@
         <joint name="${prefix}to_kinect" type="fixed">
             <parent link="${prefix}tool0"/>
             <child link="kinect_frame"/>
-            <origin xyz="0 0 0.015" rpy="0.63 0.89 1.57"/>
-            <!--
-            Translation
-            -0.0694681
-            -0.284737
-            0.247462
-            Rotation
-            -1.61514
-            -0.043724
-            -2.17802
-
-
-            <origin xyz="-0.0695877
- -0.285281
-  0.240969"
-                    rpy=" -1.61039
--0.0438775
-  -2.17805"/>-->
+            <origin xyz="0 0 0" rpy="0 0 0"/>
         </joint>
 
         <joint name="${prefix}to_kinect_mesh" type="revolute">
