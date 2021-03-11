@@ -25,6 +25,13 @@
 #include <pcl/filters/voxel_grid.h>
 
 
+#ifndef SOURCE_FRAME
+#define SOURCE_FRAME "base_link"
+#endif
+#ifndef TARGET_FRAME
+#define TARGET_FRAME "link_depthtf"
+#endif
+
 namespace enc = sensor_msgs::image_encodings;
 
 ros::Publisher pub;
@@ -68,17 +75,42 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
 
     output = *cloud;
 
-    point_cloud_marker.points.clear();
+    tf::Stamped<tf::Point> stamped_point;
+    stamped_point.frame_id_ = TARGET_FRAME;
+
+    tf::TransformListener tf_listner;
+
 
     for(int i = 0; i < output.width; i+=10)
     {
         for(int j = 0; j < output.height; j+=10)
         {
+            //Declare point to write relative to camera position
             geometry_msgs::Point new_point ;
+            //Get point relative to camera position
             pixelTo3DPoint(output, i, j, new_point);
-            point_cloud_marker.points.push_back(new_point);
+            //Create point used in translation to different frame
+            tf::Point tf_point(new_point.x,new_point.y,new_point.z);
+            //Set point
+            stamped_point.setData(tf_point);
+
+            //Result point
+            tf::Stamped<tf::Point> stamped_point2;
+            stamped_point2.setData(tf_point);
+            //Set frame
+            stamped_point2.frame_id_ = SOURCE_FRAME;
+            //Point transformation
+            tf_listner.waitForTransform(SOURCE_FRAME,TARGET_FRAME,ros::Time(0),ros::Duration(5.0));
+            tf_listner.transformPoint(SOURCE_FRAME,stamped_point,stamped_point2);
+
+            geometry_msgs::Point finalPoint;
+            finalPoint.x = stamped_point2.x();
+            finalPoint.y = stamped_point2.y();
+            finalPoint.z = stamped_point2.z();
+            point_cloud_marker.points.push_back(finalPoint);
+
         }
-        //std::cout << i << std::endl;
+
     }
 
     std::cout << "marker publish" << std::endl;
@@ -97,11 +129,10 @@ int main( int argc, char** argv )
     ros::Rate r(1);
     // /kinect/depth/points
     ros::Subscriber depth_camera_subscriber = n.subscribe("kinect/depth/points",1, cloud_cb);
-
-    //pub = n.advertise<sensor_msgs::PointCloud2>("output", 1);
+    
         marker_publisher = n.advertise<visualization_msgs::Marker>("visualization_marker", 0);
 
-        point_cloud_marker.header.frame_id = "link_depthtf";
+        point_cloud_marker.header.frame_id = SOURCE_FRAME;
         point_cloud_marker.header.stamp = ros::Time();
         point_cloud_marker.ns = "my_namespace";
         point_cloud_marker.id = 0;
