@@ -16,6 +16,8 @@
 #include "point_translation.h"
 #include "markers_init.h"
 #include "ray_box_collider.h"
+#include "octomap.h"
+#include "candidateCameraView.h"
 
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
@@ -36,7 +38,7 @@ visualization_msgs::Marker point_cloud_marker;
 visualization_msgs::Marker position_marker;
 ros::Publisher marker_publisher;
 ros::Publisher position_publisher;
-
+Octomap octomap(Vec3f(10,10,20),Vec3f(-10,-10,0),0.1f);
 struct map {
     std::vector<geometry_msgs::Point> maped_points;
 }map_points_list,current_scan;
@@ -53,29 +55,12 @@ void UpdateMarker()
     marker_publisher.publish(point_cloud_marker);
 }
 
-class candidateCameraView
+
+void evaluateCameraViews()
 {
-public:
-    float x;
-    float y;
-    float z;
 
-    candidateCameraView(float r, float s, float t, float xOffset, float yOffset, float zOffset )
-    {
-        x = r * cos(s) * sin(t) + xOffset;
-        y = r * sin(s) * sin(t) + yOffset;
-        z = r * cos(t) + zOffset;
-    }
+}
 
-    geometry_msgs::Point GetMessagePoint()
-    {
-        geometry_msgs::Point result;
-        result.x = x;
-        result.y = y;
-        result.z = z;
-        return result;
-    }
-};
 void generateCandiadateViews()
 {
     std::cout<<"Candidate generation START"<<std::endl;
@@ -113,6 +98,7 @@ void initialScan()
     robot_state = generate_candidate_view;
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Initial Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+    octomap.WriteScanResults();
     generateCandiadateViews();
 }
 

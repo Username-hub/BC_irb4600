@@ -118,7 +118,9 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+        ${candidateCameraView}
         ${ray_box_collider}
+        ${octomap}
         ${point_translation}
         ${markers_init}
         ${src}
