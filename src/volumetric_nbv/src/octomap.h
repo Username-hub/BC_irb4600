@@ -2,6 +2,7 @@
 // Created by user on 21/03/2021.
 //
 #include "ray_box_collider.h"
+#include "candidateCameraView.h"
 #include <list>
 #include <iterator>
 #include <vector>
@@ -70,7 +71,7 @@ public:
         return false;
     }
 
-    void WriteScanResults(Vec3f camera_pos, std::vector<Vec3f> &scan_points)
+    void WriteScanResults(Vec3f camera_pos, std::vector<Vec3f> scan_points)
     {
         std::cout<<"Write scan results START"<<std::endl;
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -92,6 +93,37 @@ public:
         }
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cout<<"Write scan results END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+    }
+
+    candidateCameraView GetBestCameraView(std::vector<candidateCameraView> views)
+    {
+        std::cout<<"Camera view evaluation START"<<std::endl;
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        candidateCameraView result = views[0];
+        result.value = 0;
+        for(int i =0 ;i < views.size(); i++)
+        {
+            int mark = 0;
+            for(int j =0; j < voxelMap.size() ; j++)
+            {
+                if(voxelMap[j].voxelSrate == unmarked)
+                {
+                    if(voxelMap[j].intersect(Ray(views[i].point,views[i].center)))
+                    {
+                        mark++;
+                    }
+                }
+            }
+            views[i].value = mark;
+            if(result.value < views[i].value)
+            {
+                result = views[i];
+            }
+        }
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout<<"Camera view evaluation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+        return result;
     }
 };
 

@@ -18,10 +18,13 @@
 #include "ray_box_collider.h"
 #include "octomap.h"
 #include "candidateCameraView.h"
+#include "moveControl.h"
 
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl_ros/transforms.h>
+
+
 
 #ifndef SOURCE_FRAME
 #define SOURCE_FRAME "base_link"
@@ -38,12 +41,14 @@ visualization_msgs::Marker point_cloud_marker;
 visualization_msgs::Marker position_marker;
 ros::Publisher marker_publisher;
 ros::Publisher position_publisher;
-Octomap octomap(Vec3f(10,10,20),Vec3f(-10,-10,0),0.1f);
+
+
+Octomap octomap(Vec3f(3,3,3),Vec3f(-3,-3,0),0.1f);
 struct map {
     std::vector<geometry_msgs::Point> maped_points;
 }map_points_list,current_scan;
 
-enum StateOfRobot{ initial_scan, generate_candidate_view, evaluating_view, move_to_pose, making_scan, add_points} robot_state;
+enum StateOfRobot{ initial_scan, generate_candidate_view, evaluating_view, move_to_pose, making_scan, add_points} robot_state_scan;
 
 void UpdateMarker()
 {
@@ -53,12 +58,20 @@ void UpdateMarker()
         point_cloud_marker.points.push_back(map_points_list.maped_points.at(i));
     }
     marker_publisher.publish(point_cloud_marker);
+
 }
 
 
-void evaluateCameraViews()
+void evaluateCameraViews( std::vector<candidateCameraView> views)
 {
-
+    candidateCameraView bestView = octomap.GetBestCameraView(views);
+    geometry_msgs::Point viewPoint;
+    viewPoint.x = bestView.x;
+    viewPoint.y = bestView.y;
+    viewPoint.z = bestView.z;
+    point_cloud_marker.points.push_back(viewPoint);
+    marker_publisher.publish(point_cloud_marker);
+    std::cout << viewPoint.x << " " << viewPoint.y << " " << viewPoint.z << std::endl;
 }
 
 void generateCandiadateViews()
@@ -83,6 +96,8 @@ void generateCandiadateViews()
     position_publisher.publish(position_marker);
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Candidate generation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+    robot_state_scan = evaluating_view;
+    evaluateCameraViews(views);
 }
 
 void initialScan()
@@ -95,10 +110,11 @@ void initialScan()
         map_points_list.maped_points.push_back(current_scan.maped_points.at(i));
     }
     UpdateMarker();
-    robot_state = generate_candidate_view;
+    robot_state_scan = generate_candidate_view;
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Initial Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-    octomap.WriteScanResults();
+    MoveControlClass moveControlClass;
+    octomap.WriteScanResults(moveControlClass.GetCameraPoint(),MsgVecToVec3(current_scan.maped_points));
     generateCandiadateViews();
 }
 
@@ -106,7 +122,7 @@ void initialScan()
 void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
 {
     //write scan to map
-    if(robot_state == initial_scan) {
+    if(robot_state_scan == initial_scan) {
         sensor_msgs::PointCloud2 output;
 
         output = *cloud;
@@ -152,7 +168,7 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
         marker_publisher.publish(point_cloud_marker);
     }
     //Call initial scan function
-    if(robot_state == initial_scan)
+    if(robot_state_scan == initial_scan)
     {
         initialScan();
     }
@@ -164,7 +180,7 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
 
 int main( int argc, char** argv )
 {
-    robot_state = initial_scan;
+    robot_state_scan = initial_scan;
     ros::init(argc, argv, "start_volumetric_bnv");
     ros::NodeHandle n;
     ros::Rate r(1);

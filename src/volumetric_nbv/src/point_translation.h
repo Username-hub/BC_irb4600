@@ -3,7 +3,8 @@
 //
 
 #include <sensor_msgs/PointCloud2.h>
-
+#include <vector>
+#include "ray_box_collider.h"
 #ifndef SRC_POINT_TRANSLATION_H
 #define SRC_POINT_TRANSLATION_H
 
@@ -37,4 +38,19 @@ void pixelTo3DPoint(const sensor_msgs::PointCloud2 pCloud, const int u, const in
     p.y = Y;
     p.z = Z;
 
+}
+
+std::vector<Vec3f> MsgVecToVec3(std::vector<geometry_msgs::Point> &maped_points)
+{
+    std::cout<<"Transform MsgVecToVec3 START"<<std::endl;
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    std::vector<Vec3f> result;
+    for(int i = 0; i < maped_points.size(); i++)
+    {
+        Vec3f vec3F(maped_points[i].x,maped_points[i].y,maped_points[i].z);
+        result.push_back(vec3F);
+    }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout<<"Transform MsgVecToVec3 END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+    return result;
 }

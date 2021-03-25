@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   visualization_msgs
         pcl_ros
+        moveit_ros_planning_interface
 )
 
 ## System dependencies are found with CMake's conventions
@@ -119,6 +120,7 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
         ${candidateCameraView}
+        ${moveControl}
         ${ray_box_collider}
         ${octomap}
         ${point_translation}
