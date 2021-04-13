@@ -72,7 +72,7 @@ void MoveToPose()
     moveControlClass.MoveToPoint(target_pose);
     robot_state_scan = making_scan;
 }
-void evaluateCameraViews( std::vector<candidateCameraView> views)
+void evaluateCameraViews(const std::vector<candidateCameraView> &views)
 {
     candidateCameraView bestView ;
     bestView = octomap_local.GetBestCameraView(views);
@@ -155,7 +155,7 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
                 //Declare point to write relative to camera position
                 geometry_msgs::Point new_point;
                 //Get point relative to camera position
-                pixelTo3DPoint(output, i, j, new_point);
+                pixelTo3DPoint(output, i, j, new_point); // TODO co robi tato funkcia
                 //Create point used in translation to different frame
                 tf::Point tf_point(new_point.x, new_point.y, new_point.z);
                 //Set point
@@ -237,7 +237,7 @@ int main( int argc, char** argv )
     std::cout << "2 "
               << current_pose.pose.position.z move_group_interface.getCurrentPose("link_6").pose.position.x << std::endl;
     */
-    while(ros::ok) {
+    while(ros::ok()) {
 
         if (robot_state_scan == move_to_pose) {
             robot_state_scan = wait_move;

@@ -101,23 +101,23 @@ public:
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         candidateCameraView result = views[0];
         result.value = 0;
-        for(int i =0 ;i < views.size(); i++)
+        for(auto &view : views)
         {
             int mark = 0;
             for(int j =0; j < voxelMap.size() ; j++)
             {
                 if(voxelMap[j].voxelSrate == unmarked)
                 {
-                    if(voxelMap[j].intersect(Ray(views[i].point,views[i].center)))
+                    if(voxelMap[j].intersect(Ray(view.point,view.center)))
                     {
                         mark++;
                     }
                 }
             }
-            views[i].value = mark;
-            if(result.value < views[i].value)
+            view.value = mark;
+            if(result.value < view.value)
             {
-                result = views[i];
+                result = view;
             }
         }
 
