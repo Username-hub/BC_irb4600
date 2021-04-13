@@ -18,23 +18,24 @@
 #include <moveit_msgs/DisplayTrajectory.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/MoveItErrorCodes.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
+//#include <moveit_visual_tools/moveit_visual_tools.h>
 #include "ray_box_collider.h"
 
 
 class MoveControlClass {
 private:
-
+    moveit::planning_interface::MoveGroupInterface move_group;
+    static constexpr char* PLANNING_GROUP = "robot";
 public:
-    MoveControlClass()
+    MoveControlClass() : move_group(PLANNING_GROUP)
     {
     }
     void MoveToPoint(geometry_msgs::Pose aimPose)
     {
 
 
-        static const std::string PLANNING_GROUP = "robot";
-        moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+
+//        moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
 
         const moveit::core::JointModelGroup* joint_model_group =
                 move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
@@ -43,12 +44,12 @@ public:
 
         geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group.getCurrentPose(move_group.getEndEffectorLink());
 
-        /*
-         * aimPose.orientation.x = poseStamped.pose.orientation.x;
+        
+        aimPose.orientation.x = poseStamped.pose.orientation.x;
         aimPose.orientation.w = poseStamped.pose.orientation.w;
         aimPose.orientation.y = poseStamped.pose.orientation.y;
         aimPose.orientation.z = poseStamped.pose.orientation.z;
-         */
+         
         std::cout << "Aim position: " << aimPose.position.x << " / "
                 << aimPose.position.y << " / "
                 << aimPose.position.z << " / "
