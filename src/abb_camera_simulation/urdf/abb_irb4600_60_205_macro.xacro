@@ -196,9 +196,9 @@
         <link name="${prefix}tool0"/>
         <!-- end of link list -->
 
-        <link name="kinect_mesh">
+        <link name="${prefix}kinect_mesh">
             <visual>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="0 0 0" rpy="0 1.57 0" />
                 <geometry>
                     <mesh filename="package://abb_camera_simulation/meshes/kinect/visual/kinect_sensor.stl" scale ="0.001 0.001 0.001"/>
                 </geometry>
@@ -207,7 +207,7 @@
                 </material>
             </visual>
             <collision>
-                <origin xyz="0 0 0" rpy="0 0 0" />
+                <origin xyz="0 0 0" rpy="0 1.57 0" />
                 <geometry>
                     <mesh filename="package://abb_camera_simulation/meshes/kinect/collision/kinect_sensor.stl" scale ="0.001 0.001 0.001"/>
                 </geometry>
@@ -222,9 +222,9 @@
             </inertial>
         </link>
 
-        <link name="look_at"/>
+        <link name="${prefix}look_at"/>
         <joint name="${prefix}base_to_lookat" type="fixed">
-            <origin xyz="1 0 0" rpy="0 0 0" />
+            <origin xyz="1 0 0" rpy="0 1.57 0" />
             <parent link="${prefix}base_link"/>
             <child link="look_at"/>
         </joint>
@@ -285,30 +285,13 @@
             <origin xyz="0.135 0 0" rpy="0 1.570796 0"/>
         </joint>
 
-        <joint name="to_kinect" type="fixed">
+        <joint name="${prefix}to_kinect" type="fixed">
             <parent link="${prefix}tool0"/>
             <child link="kinect_frame"/>
-            <origin xyz="0 0 0.015" rpy="0 0 1.57"/>
-            <!--
-            Translation
-            -0.0694681
-            -0.284737
-            0.247462
-            Rotation
-            -1.61514
-            -0.043724
-            -2.17802
-
-
-            <origin xyz="-0.0695877
- -0.285281
-  0.240969"
-                    rpy=" -1.61039
--0.0438775
-  -2.17805"/>-->
+            <origin xyz="0 0 0" rpy="0 0 0"/>
         </joint>
 
-        <joint name="to_kinect_mesh" type="revolute">
+        <joint name="${prefix}to_kinect_mesh" type="revolute">
             <parent link="${prefix}tool0"/>
             <child link="kinect_mesh"/>
             <limit lower="0" upper="0" effort="0" velocity="0"/>
@@ -316,7 +299,7 @@
             <origin xyz="0 0 0.015" rpy="0 0 1.57"/>
         </joint>
 
-        <link name ="kinect_frame"/>
+        <link name ="${prefix}kinect_frame"/>
 
         <transmission name="tran1">
             <type>transmission_interface/SimpleTransmission</type>

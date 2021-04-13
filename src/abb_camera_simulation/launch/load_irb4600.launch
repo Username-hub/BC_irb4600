@@ -1,3 +1,4 @@
 <launch>
+	<!--<param name="robot_description" textfile="$(find abb_camera_simulation)/meshes/abb_irb/model.sdf" />-->
 	<param name="robot_description" command="$(find xacro)/xacro --inorder '$(find abb_camera_simulation)/urdf/abb_irb4600_60_205.xacro'" />
 </launch>

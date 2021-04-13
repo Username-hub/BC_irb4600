@@ -154,7 +154,27 @@
       <material name="yellow"/>
     </collision>
   </link>
-  <link name="tool0"/>
+  <link name="tool0" >
+  <!--<link name= "kinect">-->
+    <visual>
+      <!-- <origin rpy="-1.57 0 1.57" xyz="-0.025 0 -0.125"/>-->
+      <origin rpy="0 0 1.57" xyz="0 0 0.02"/>
+      <geometry>
+        <mesh filename="package://abb_camera_simulation/meshes/kinect/visual/kinect_sensor.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="abb_grey">
+        <color rgba="0.2 0.2 0.2 1"/>
+      </material>
+    </visual>
+    <collision>
+      <!--<origin rpy="-1.57 0 1.57" xyz="-0.025 0 -0.125"/>-->
+       <origin rpy="0 0 1.57" xyz="0 0 0.02"/>
+      <geometry>
+        <mesh filename="package://abb_camera_simulation/meshes/kinect/collision/kinect_sensor.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="yellow"/>
+    </collision>
+  </link>
   <!-- end of link list -->
   <!-- TODO ALL JOINT LIMITS limits are edited and reduced to lower values-->
   <!-- joint list -->
@@ -205,4 +225,9 @@
     <child link="tool0"/>
     <origin rpy="0 1.570796 0" xyz="0.135 0 0"/>
   </joint>
+  <!--<joint name="tool0-kinect" type="fixed">
+    <parent link="tool0"/>
+    <child link="kinect"/>
+    <origin rpy="0 1.570796 0" xyz="0.135 0 0"/>
+  </joint>-->
 </robot>
