@@ -5,12 +5,14 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <vector>
 #include <cmath>
+#include <tf/transform_datatypes.h>
+#include <tf_conversions/tf_eigen.h>
+#include <eigen_conversions/eigen_msg.h>
 #include "ray_box_collider.h"
 #ifndef SRC_POINT_TRANSLATION_H
 #define SRC_POINT_TRANSLATION_H
-#endif //SRC_POINT_TRANSLATION_H
 
-void pixelTo3DPoint(const sensor_msgs::PointCloud2 pCloud, const int u, const int v, geometry_msgs::Point &p)
+void pixelTo3DPoint(const sensor_msgs::PointCloud2 &pCloud, const int u, const int v, geometry_msgs::Point &p)
 {
 // get width and height of 2D point cloud data
     int width = pCloud.width;
@@ -53,75 +55,20 @@ std::vector<Vec3f> MsgVecToVec3(std::vector<geometry_msgs::Point> &maped_points)
     std::cout<<"Transform MsgVecToVec3 END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
     return result;
 }
-struct Quaternion
+
+
+void setRotation(geometry_msgs::Pose &aimPose, const Vec3f &scanAim)
 {
-    double w, x, y, z;
-};
-
-Quaternion ToQuaternion(double yaw, double pitch, double roll) // yaw (Z), pitch (Y), roll (X)
-{
-    // Abbreviations for the various angular functions
-    double cy = cos(yaw * 0.5);
-    double sy = sin(yaw * 0.5);
-    double cp = cos(pitch * 0.5);
-    double sp = sin(pitch * 0.5);
-    double cr = cos(roll * 0.5);
-    double sr = sin(roll * 0.5);
-
-    Quaternion q;
-    q.w = cr * cp * cy + sr * sp * sy;
-    q.x = sr * cp * cy - cr * sp * sy;
-    q.y = cr * sp * cy + sr * cp * sy;
-    q.z = cr * cp * sy - sr * sp * cy;
-
-    return q;
+    tf::Quaternion q;
+    float yaw = atan2(aimPose.position.x - scanAim.x ,aimPose.position.z - scanAim.z);
+    float roll = sqrt(pow(aimPose.position.x - scanAim.x,2)+pow(aimPose.position.z - scanAim.z,2));
+    float pitch = atan2(roll,aimPose.position.y - scanAim.y);
+    q.setEuler(yaw,pitch,-1.571);
+    q.normalize();
+    aimPose.orientation.x = q.getX();
+    aimPose.orientation.y = q.getY();
+    aimPose.orientation.z = q.getZ();
+    aimPose.orientation.w = q.getW();
 }
 
-/*int dotProduct(int vect_A[], int vect_B[])
-{
-
-    int product = 0;
-    int n = 3;
-    // Loop for calculate cot product
-    for (int i = 0; i < n; i++)
-
-        product = product + vect_A[i] * vect_B[i];
-    return product;
-}*
-
-// Function to find
-// cross product of two vector array.
-void crossProduct(int vect_A[], int vect_B[], int cross_P[])
-
-{
-
-    cross_P[0] = vect_A[1] * vect_B[2] - vect_A[2] * vect_B[1];
-    cross_P[1] = vect_A[2] * vect_B[0] - vect_A[0] * vect_B[2];
-    cross_P[2] = vect_A[0] * vect_B[1] - vect_A[1] * vect_B[0];
-}*/
-
-void setRotation(geometry_msgs::Pose &aimPose, Vec3f scanAim)
-{
-    /*Vec3f ang;
-    ang.x = 0; //atan2(scanAim.z - aimPose.position.z, scanAim.y - aimPose.position.y );
-    ang.y = atan2(scanAim.x - aimPose.position.x, scanAim.z - aimPose.position.z );
-    ang.z = atan(sqrt(pow(scanAim.y - aimPose.position.y,2) + pow(scanAim.x - aimPose.position.x, 2))/(scanAim.z - aimPose.position.z) );
-    Quaternion q = ToQuaternion(ang.x, ang.y, ang.z);
-
-    */
-
-    float d = scanAim.x * aimPose.position.x
-             + scanAim.y * aimPose.position.y
-             + scanAim.z * aimPose.position.z;
-    Vec3f axis;
-    axis.x = aimPose.position.y * scanAim.z - aimPose.position.z * scanAim.y;
-    axis.y = aimPose.position.z * scanAim.x - aimPose.position.x * scanAim.z;
-    axis.z = aimPose.position.x * scanAim.y - aimPose.position.y * scanAim.x;
-
-    aimPose.orientation.z = axis.z;
-    aimPose.orientation.x = axis.x;
-    aimPose.orientation.y = axis.y;
-    Vec3f pose(aimPose.position.x, aimPose.position.y, aimPose.position.z);
-    Vec3f aim(scanAim.x, scanAim.y, scanAim.z);
-    aimPose.orientation.w = sqrt((pose.norm()*pose.norm()*aim.norm()*aim.norm())+d);
-}
+#endif //SRC_POINT_TRANSLATION_H

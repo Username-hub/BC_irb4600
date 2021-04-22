@@ -12,8 +12,12 @@ find_package(catkin REQUIRED COMPONENTS
   visualization_msgs
         pcl_ros
         moveit_ros_planning_interface
+        eigen_conversions
+        tf
+        tf_conversions
+        std_msgs
+        geometry_msgs
 )
-
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -214,4 +218,6 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 add_executable(start_volumetric_bnv src/start_volumetric_bnv.cpp)
-target_link_libraries(start_volumetric_bnv ${catkin_LIBRARIES})
+target_link_libraries(start_volumetric_bnv
+        ${catkin_LIBRARIES}
+        )

@@ -13,7 +13,9 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h>
+#include <geometry_msgs/PoseArray.h>
 #include <moveit/move_group_interface/move_group_interface.h>
+#include <tf/transform_listener.h>
 #include "point_translation.h"
 #include "markers_init.h"
 #include "ray_box_collider.h"
@@ -45,7 +47,7 @@ ros::Publisher position_publisher;
 Vec3f center(1.5,0,0.5);
 
 
-Octomap octomap_local(Vec3f(3,3,3),Vec3f(-3,-3,0),0.1f);
+Octomap octomap_local;
 struct map {
     std::vector<geometry_msgs::Point> maped_points;
 }map_points_list,current_scan;
@@ -67,30 +69,34 @@ void UpdateMarker()
 geometry_msgs::Pose target_pose;
 void MoveToPose()
 {
-    setRotation(target_pose,center);
+    std::cout << "start move" << std::endl;
     MoveControlClass moveControlClass;
+    //moveControlClass.MoveToPoint(target_pose);
+    //robot_state_scan = making_scan;
+    robot_state_scan = wait_move;
     moveControlClass.MoveToPoint(target_pose);
-    robot_state_scan = making_scan;
 }
-void evaluateCameraViews( std::vector<candidateCameraView> views)
+void evaluateCameraViews(const std::vector<candidateCameraView> &views)
 {
     candidateCameraView bestView ;
-    bestView = octomap_local.GetBestCameraView(views);
+    bestView = octomap_local.GetBestCameraView(views, center);
     geometry_msgs::Point viewPoint;
     viewPoint.x = bestView.x;
     viewPoint.y = bestView.y;
     viewPoint.z = bestView.z;
     point_cloud_marker.points.push_back(viewPoint);
     marker_publisher.publish(point_cloud_marker);
+    setRotation(target_pose,center);
     std::cout << viewPoint.x << " " << viewPoint.y << " " << viewPoint.z << std::endl;
-    geometry_msgs::Pose bestPose;
+    //geometry_msgs::Pose bestPose;
     target_pose.position.x = bestView.x;
     target_pose.position.y = bestView.y;
     target_pose.position.z = bestView.z;
-    robot_state_scan = move_to_pose;
     //MoveToPose();
+    robot_state_scan = move_to_pose;
 }
-
+//TODO: make arrow
+//TODO: remove pose marker
 void generateCandiadateViews()
 {
     std::cout<<"Candidate generation START"<<std::endl;
@@ -107,10 +113,11 @@ void generateCandiadateViews()
         {
             candidateCameraView CAV(r, s * PI/180, t * PI/180,xOffset, yOffset, zOffset);
             views.push_back(CAV);
-            position_marker.points.push_back(CAV.GetMessagePoint());
+            //position_marker.points.push_back(CAV.GetMessagePoint());
         }
     }
-    position_publisher.publish(position_marker);
+    //position_publisher.publish(position_marker);
+    position_publisher.publish(initPoseMarker(views,center));
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Candidate generation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
     robot_state_scan = evaluating_view;
@@ -131,6 +138,8 @@ void makeScan()
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Making Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
+    //MoveControlClass moveControlClass;
+    //octomap_local().WriteScanResults(current_scan, moveControlClass.GetCameraPoint());
     //octomap.WriteScanResults(moveControlClass.GetCameraPoint(),MsgVecToVec3(current_scan.maped_points));
     generateCandiadateViews();
 }
@@ -141,7 +150,6 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
     //write scan to map
     if(robot_state_scan == initial_scan || robot_state_scan == making_scan) {
         sensor_msgs::PointCloud2 output;
-
         output = *cloud;
 
         tf::Stamped<tf::Point> stamped_point;
@@ -176,10 +184,15 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
                 finalPoint.z = stamped_point2.z();
                 current_scan.maped_points.push_back(finalPoint);
                 //point_cloud_marker.points.push_back(finalPoint);
-
             }
-
         }
+        tf_listner.waitForTransform(SOURCE_FRAME, TARGET_FRAME, ros::Time(0), ros::Duration(5.0));
+        tf::StampedTransform transform;
+        tf_listner.lookupTransform(SOURCE_FRAME, TARGET_FRAME, ros::Time(0), transform);
+        octomap::point3d cameraPoin3d(transform.getOrigin().x(),transform.getOrigin().y(),
+                                      transform.getOrigin().z());
+        MoveControlClass moveControlClass;
+        octomap_local.WriteScanResults(output,cameraPoin3d);
 
         std::cout << "marker publish" << std::endl;
         marker_publisher.publish(point_cloud_marker);
@@ -187,7 +200,6 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
     //Call initial scan function
     if(robot_state_scan == initial_scan || robot_state_scan == making_scan)
     {
-        //TODO:uncomment after debug
         makeScan();
     }
 
@@ -221,29 +233,16 @@ int main( int argc, char** argv )
     marker_publisher = n.advertise<visualization_msgs::Marker>("visualization_marker", 0);
     initCloudMarker(point_cloud_marker);
 
-    position_publisher = n.advertise<visualization_msgs::Marker>("position_marker", 0);
-    initLineMarker(position_marker);
+    position_publisher = n.advertise<geometry_msgs::PoseArray>("pose_marker", 0);
+    //initLineMarker(position_marker);
 
-    /* moveit::planning_interface::MoveGroupInterface *group;
-    group = new moveit::planning_interface::MoveGroupInterface("arm_group");
-    group->setEndEffectorLink(group->getEndEffectorLink());
-    geometry_msgs::PoseStamped current_pose =
-            group->getCurrentPose();
-
-    /arker_publisher.publish(point_cloud_marker);
-    static const std::string PLANNING_GROUP = "arm_group";
-    moveit::planning_interface::MoveGroupInterface move_group_interface(PLANNING_GROUP);
-
-    std::cout << "2 "
-              << current_pose.pose.position.z move_group_interface.getCurrentPose("link_6").pose.position.x << std::endl;
-    */
     while(ros::ok) {
 
         if (robot_state_scan == move_to_pose) {
             robot_state_scan = wait_move;
             MoveToPose();
         }
-
+        //sleep(103);
    }
     ros::waitForShutdown();
    //ros::spin();
