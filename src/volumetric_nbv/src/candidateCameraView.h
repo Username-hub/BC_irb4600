@@ -12,7 +12,6 @@ public:
     float z;
     Vec3f point;
     Vec3f center;
-    int value;
     candidateCameraView()
     {
 

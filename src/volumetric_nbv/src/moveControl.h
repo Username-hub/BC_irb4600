@@ -18,7 +18,6 @@
 #include <moveit_msgs/DisplayTrajectory.h>
 #include <moveit_msgs/PlanningScene.h>
 #include <moveit_msgs/MoveItErrorCodes.h>
-#include <moveit_visual_tools/moveit_visual_tools.h>
 #include "ray_box_collider.h"
 
 
@@ -43,12 +42,12 @@ public:
 
         geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group.getCurrentPose(move_group.getEndEffectorLink());
 
-        /*
-         * aimPose.orientation.x = poseStamped.pose.orientation.x;
+
+        aimPose.orientation.x = poseStamped.pose.orientation.x;
         aimPose.orientation.w = poseStamped.pose.orientation.w;
         aimPose.orientation.y = poseStamped.pose.orientation.y;
         aimPose.orientation.z = poseStamped.pose.orientation.z;
-         */
+
         std::cout << "Aim position: " << aimPose.position.x << " / "
                 << aimPose.position.y << " / "
                 << aimPose.position.z << " / "
@@ -70,16 +69,13 @@ public:
         std::cout << "Result " << result.val << std::endl;
 
     }
-    Vec3f GetCameraPoint()
+    octomap::point3d GetCameraPoint()
     {
-        static const std::string PLANNING_GROUP = "arm_group";
+        static const std::string PLANNING_GROUP = "robot";
         moveit::planning_interface::MoveGroupInterface move_group_interface(PLANNING_GROUP);
         moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
         geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group_interface.getCurrentPose(move_group_interface.getEndEffectorLink());
-        Vec3f result;
-        result.x = poseStamped.pose.position.x;
-        result.y = poseStamped.pose.position.y;
-        result.z = poseStamped.pose.position.z;
+        octomap::point3d result(poseStamped.pose.position.x,poseStamped.pose.position.y,poseStamped.pose.position.z);
         return result;
     }
 

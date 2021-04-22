@@ -1,17 +1,20 @@
 //
 // Created by user on 21/03/2021.
 //
+#include <geometry_msgs/PoseArray.h>
+#include "candidateCameraView.h"
+#include "point_translation.h"
 
 #ifndef SRC_MARKERS_INIT_H
 #define SRC_MARKERS_INIT_H
 
-#endif //SRC_MARKERS_INIT_H
 #ifndef SOURCE_FRAME
 #define SOURCE_FRAME "base_link"
 #endif
 #ifndef TARGET_FRAME
 #define TARGET_FRAME "link_depthtf"
 #endif
+
 void initCloudMarker(visualization_msgs::Marker &point_cloud_marker)
 {
     point_cloud_marker.header.frame_id = SOURCE_FRAME;
@@ -63,3 +66,22 @@ void initLineMarker(visualization_msgs::Marker &position_marker)
     position_marker.color.g = 0.0;
     position_marker.color.b = 1.0;
 }
+geometry_msgs::PoseArray initPoseMarker(const std::vector<candidateCameraView> &views, const Vec3f &scanAim)
+{
+    geometry_msgs::PoseArray poseArray;
+    poseArray.header.frame_id = SOURCE_FRAME;
+    poseArray.header.stamp = ros::Time();
+    for(int i = 0; i < views.size();i++)
+    {
+        geometry_msgs::Pose pose;
+        pose.position.x =views[i].x;
+        pose.position.y =views[i].y;
+        pose.position.z =views[i].z;
+        setRotation(pose,scanAim);
+        poseArray.poses.push_back(pose);
+    }
+
+    return poseArray;
+}
+#endif //SRC_MARKERS_INIT_H
+

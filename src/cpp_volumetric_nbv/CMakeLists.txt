@@ -8,11 +8,13 @@ project(cpp_volumetric_nbv)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  std_msgs
-  message_generation
+        roscpp
+        std_msgs
+        message_generation
         visualization_msgs
+
 )
+find_package(octomap REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -120,6 +122,7 @@ find_package(catkin REQUIRED COMPONENTS
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+        ${OCTOMAP_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
