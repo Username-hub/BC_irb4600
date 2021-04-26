@@ -88,6 +88,14 @@ public:
     int sign[3];
 };
 
+class Sphere
+{
+public:
+    Vec3f center;
+    float radius;
+
+    Sphere(const Vec3f &center, float radius) : center(center), radius(radius) {}
+};
 class Box3
 {
 public:
@@ -137,6 +145,34 @@ public:
             return true;
         }
         return false;
+    }
+
+bool intersectsWith(Sphere sphere) {
+        float dmin = 0;
+
+        Vec3f center = sphere.center;
+        Vec3f bmin = bounds[0];
+        Vec3f bmax = bounds[1];
+
+        if (center.x < bmin.x) {
+            dmin += pow(center.x - bmin.x, 2);
+        } else if (center.x > bmax.x) {
+            dmin += pow(center.x - bmax.x, 2);
+        }
+
+        if (center.y < bmin.y) {
+            dmin += pow(center.y - bmin.y, 2);
+        } else if (center.y > bmax.y) {
+            dmin += pow(center.y - bmax.y, 2);
+        }
+
+        if (center.z < bmin.z) {
+            dmin += pow(center.z - bmin.z, 2);
+        } else if (center.z > bmax.z) {
+            dmin += pow(center.z - bmax.z, 2);
+        }
+
+        return dmin <= pow(sphere.radius, 2);
     }
 };
 

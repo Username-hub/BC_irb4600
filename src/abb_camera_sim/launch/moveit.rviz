@@ -271,11 +271,11 @@ Visualization Manager:
       Class: rviz/PoseArray
       Color: 255; 25; 0
       Enabled: true
-      Head Length: 0.07000000029802322
-      Head Radius: 0.029999999329447746
+      Head Length: 0.03500000014901161
+      Head Radius: 0.014999999664723873
       Name: PoseArray
-      Shaft Length: 0.23000000417232513
-      Shaft Radius: 0.009999999776482582
+      Shaft Length: 0.11999999731779099
+      Shaft Radius: 0.004999999888241291
       Shape: Arrow (3D)
       Topic: /pose_marker
       Unreliable: false

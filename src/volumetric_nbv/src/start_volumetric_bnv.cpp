@@ -44,10 +44,12 @@ visualization_msgs::Marker point_cloud_marker;
 visualization_msgs::Marker position_marker;
 ros::Publisher marker_publisher;
 ros::Publisher position_publisher;
+std::vector<candidateCameraView> views;
+Vec3f cameraPos;
 Vec3f center(1.5,0,0.5);
 
 
-Octomap octomap_local;
+Octomap octomap_local(Vec3f(3,3,3),Vec3f(-3,-3,0),0.1f);
 struct map {
     std::vector<geometry_msgs::Point> maped_points;
 }map_points_list,current_scan;
@@ -74,12 +76,14 @@ void MoveToPose()
     //moveControlClass.MoveToPoint(target_pose);
     //robot_state_scan = making_scan;
     robot_state_scan = wait_move;
-    moveControlClass.MoveToPoint(target_pose);
+    moveControlClass.MoveToPoint(target_pose,center);
 }
-void evaluateCameraViews(const std::vector<candidateCameraView> &views)
+void evaluateCameraViews()
 {
     candidateCameraView bestView ;
-    bestView = octomap_local.GetBestCameraView(views, center);
+    int bestViewNum;
+    bestView = octomap_local.GetBestCameraView(views,bestViewNum);
+    views.erase(views.begin() + bestViewNum);
     geometry_msgs::Point viewPoint;
     viewPoint.x = bestView.x;
     viewPoint.y = bestView.y;
@@ -93,10 +97,12 @@ void evaluateCameraViews(const std::vector<candidateCameraView> &views)
     target_pose.position.y = bestView.y;
     target_pose.position.z = bestView.z;
     //MoveToPose();
+    position_publisher.publish(initPoseMarker(views,center));
     robot_state_scan = move_to_pose;
 }
 //TODO: make arrow
 //TODO: remove pose marker
+
 void generateCandiadateViews()
 {
     std::cout<<"Candidate generation START"<<std::endl;
@@ -105,7 +111,7 @@ void generateCandiadateViews()
     float r = 0.5;
     float xOffset = 1.5, yOffset = 0.0 , zOffset = 0.5;
     float verticalStep = 30.0, horizontalStep = 30.0;
-    std::vector<candidateCameraView> views;
+
 
     for(float s = 0; s < 360; s+= verticalStep)
     {
@@ -117,11 +123,10 @@ void generateCandiadateViews()
         }
     }
     //position_publisher.publish(position_marker);
-    position_publisher.publish(initPoseMarker(views,center));
+
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Candidate generation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-    robot_state_scan = evaluating_view;
-    evaluateCameraViews(views);
+    //robot_state_scan = evaluating_view;
 }
 
 void makeScan()
@@ -138,10 +143,11 @@ void makeScan()
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Making Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 
-    //MoveControlClass moveControlClass;
-    //octomap_local().WriteScanResults(current_scan, moveControlClass.GetCameraPoint());
-    //octomap.WriteScanResults(moveControlClass.GetCameraPoint(),MsgVecToVec3(current_scan.maped_points));
-    generateCandiadateViews();
+    MoveControlClass moveControlClass;
+    //octomap_local.WriteScanResults(current_scan.maped_points, moveControlClass.GetCameraPoint());
+    octomap_local.WriteScanResults(cameraPos,MsgVecToVec3(current_scan.maped_points));
+    evaluateCameraViews();
+    //generateCandiadateViews();
 }
 
 
@@ -189,10 +195,10 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
         tf_listner.waitForTransform(SOURCE_FRAME, TARGET_FRAME, ros::Time(0), ros::Duration(5.0));
         tf::StampedTransform transform;
         tf_listner.lookupTransform(SOURCE_FRAME, TARGET_FRAME, ros::Time(0), transform);
-        octomap::point3d cameraPoin3d(transform.getOrigin().x(),transform.getOrigin().y(),
+        cameraPos = Vec3f(transform.getOrigin().x(),transform.getOrigin().y(),
                                       transform.getOrigin().z());
-        MoveControlClass moveControlClass;
-        octomap_local.WriteScanResults(output,cameraPoin3d);
+        //MoveControlClass moveControlClass;
+        //octomap_local.WriteScanResults(output,cameraPoin3d);
 
         std::cout << "marker publish" << std::endl;
         marker_publisher.publish(point_cloud_marker);
@@ -227,7 +233,6 @@ int main( int argc, char** argv )
     // /kinect/depth/points
     ros::Subscriber depth_camera_subscriber = n.subscribe("kinect/depth/points",1, cloud_cb);
     //ros::Subscriber moveFeedback = n.subscribe("move_group/feedback",1, statusCallback);// n.subscribe("move_group/feedback",1, moveFeedback);
-
     ros::Rate r(1);
 
     marker_publisher = n.advertise<visualization_msgs::Marker>("visualization_marker", 0);
@@ -236,11 +241,13 @@ int main( int argc, char** argv )
     position_publisher = n.advertise<geometry_msgs::PoseArray>("pose_marker", 0);
     //initLineMarker(position_marker);
 
+    generateCandiadateViews();
     while(ros::ok) {
 
         if (robot_state_scan == move_to_pose) {
             robot_state_scan = wait_move;
             MoveToPose();
+            robot_state_scan = making_scan;
         }
         //sleep(103);
    }

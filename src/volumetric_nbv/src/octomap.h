@@ -24,8 +24,7 @@ enum VoxelState{
     occlude,
     occplane
 };
-
-/*class Voxel : public Box3 {
+class Voxel : public Box3 {
 
 public:
     VoxelState voxelSrate;
@@ -35,79 +34,102 @@ public:
         bounds[1] = max;
         voxelSrate = unmarked;
     }
-};*/
+};
 
 class Octomap
 {
 private:
-    octomap::OcTree OCMap;
-    octomap::KeyBoolMap KBM;
+    std::vector<Voxel> voxelMap;
+
 public:
-    Octomap() : OCMap(0.1)
+    Octomap(Vec3f max, Vec3f min, float side)
     {
-        OCMap.create();
+        std::cout<<"Octomap generation START"<<std::endl;
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+        for(float x = min.x; x <= max.x; x+=side)
+        {
+            for(float y = min.y; y <= max.y; y+=side)
+            {
+                for(float z = min.z; z <= max.z; z+=side)
+                {
+                    voxelMap.push_back(Voxel(Vec3f(x,y,z),Vec3f(x+side,y+side,z+side)));
+                }
+            }
+        }
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout<<"Octomap generation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
     }
-    void WriteScanResults(const sensor_msgs::PointCloud2 &cloud2, const octomap::point3d &cameraPoint)
+
+    bool GetVoxelByPoint(Voxel &result,Vec3f point)
+    {
+        for (int i = 0; i < voxelMap.size(); i++) {
+            if((point.x > voxelMap[i].bounds[0].x && point.x < voxelMap[i].bounds[1].x ) &&
+               (point.y > voxelMap[i].bounds[0].y && point.y < voxelMap[i].bounds[1].y ) &&
+               (point.z > voxelMap[i].bounds[0].z && point.z < voxelMap[i].bounds[1].z ))
+            {
+                result = voxelMap[i];
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void WriteScanResults(const Vec3f &camera_pos, const std::vector<Vec3f> &scan_points)
     {
         std::cout<<"Write scan results START"<<std::endl;
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-        octomap::Pointcloud octomapPointcloud;
-        pointCloud2ToOctomap(cloud2, octomapPointcloud);
-        OCMap.insertPointCloud(octomapPointcloud,cameraPoint, -1, false, false);
-        //OCMap.insertPointCloud(&SMPointCloud,)
-        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cout<<"Write scan results END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-
-    }
-
-    void pointCloud2ToOctomap(const sensor_msgs::PointCloud2& cloud, octomap::Pointcloud& octomapCloud) {
-        octomapCloud.reserve(cloud.data.size() / cloud.point_step);
-
-        sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud, "x");
-        sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud, "y");
-        sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud, "z");
-
-        for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
-            // Check if the point is invalid
-            if (!std::isnan(*iter_x) && !std::isnan(*iter_y) && !std::isnan(*iter_z))
-                octomapCloud.push_back(*iter_x, *iter_y, *iter_z);
-        }
-    }
-    candidateCameraView GetBestCameraView(const std::vector<candidateCameraView> &views, const Vec3f &ceterVec3f)
-    {
-        std::cout<<"View evaluation START"<<std::endl;
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        candidateCameraView result = views[0];
-        float resultMark = 0;
-        octomap::point3d centerOct(ceterVec3f.x,ceterVec3f.y,ceterVec3f.z);
-        for(int i = 0; i < views.size(); i++)
+        for(int vectorCounter = 0; vectorCounter < scan_points.size(); vectorCounter+=5)
         {
-            octomap::point3d viewPointOct(views[i].x,views[i].y,views[i].z);
-            octomap::KeyRay keyRay;
-            OCMap.computeRayKeys(viewPointOct,centerOct,keyRay);
-            //std::cout << "Key ray: " << keyRay.size() << std::endl;
-            octomap::KeyRay::iterator ray_iter;
-            float mark = 0;
-            for(ray_iter = keyRay.begin();ray_iter < keyRay.end(); ray_iter++)
+            for(int boxCounter = 0; boxCounter < voxelMap.size(); boxCounter++)
             {
-                octomap::OcTreeKey ocTreeKey;
-                ocTreeKey = *ray_iter.base();
-                //std::cout << "OcTreeKey: " << ray_iter->k << " " << ocTreeKey.k[1] << " " << ocTreeKey.k[1] << " " << std::endl;
-                octomap::OcTreeNode *ocTreeNode = OCMap.search(ocTreeKey, 0);
-                //std::cout << "ocTreeNode: " << ocTreeNode->getLogOdds() << std::endl;
-                if(ocTreeNode) {
-                    mark += ocTreeNode->getLogOdds();
+                if(voxelMap[boxCounter].voxelSrate != unmarked) continue;
+                if(voxelMap[boxCounter].intersect(Ray(camera_pos,scan_points[vectorCounter])))
+                {
+                    voxelMap[boxCounter].voxelSrate = none;
+                }
+                if(voxelMap[boxCounter].CheckPoint(scan_points[vectorCounter]))
+                {
+                    voxelMap[boxCounter].voxelSrate = occupied;
                 }
             }
-            if(resultMark < mark)
-            {
-                result = views[i];
-                resultMark = mark;
-            }
         }
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cout<<"View evaluation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+        std::cout<<"Write scan results END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+    }
+
+    candidateCameraView GetBestCameraView(const std::vector<candidateCameraView> &views, int &pos)
+    {
+        std::cout<<"Camera view evaluation START"<<std::endl;
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        candidateCameraView result = views[0];
+        const float radius = 1.0;
+        int currentBest = 0;
+        for(int i =0 ;i < views.size(); i++)
+        {
+            int mark = 0;
+            for(int j =0; j < voxelMap.size() ; j++)
+            {
+                if(voxelMap[j].voxelSrate == unmarked)
+                {
+                    //if(voxelMap[j].intersect(Ray(views[i].point,views[i].center)))
+                    if(voxelMap[j].intersectsWith(Sphere(views[i].point,radius)))
+                    {
+                        mark++;
+                    }
+                }
+            }
+            if(currentBest < mark)
+            {
+                result = views[i];
+                pos = i;
+                currentBest = mark;
+            }
+        }
+
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout<<"Camera view evaluation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
         return result;
     }
 };

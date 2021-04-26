@@ -28,7 +28,7 @@ public:
     MoveControlClass()
     {
     }
-    void MoveToPoint(geometry_msgs::Pose aimPose)
+    void MoveToPoint(geometry_msgs::Pose aimPose,const Vec3f &center)
     {
 
 
@@ -40,14 +40,15 @@ public:
 
         move_group.clearPoseTarget();
 
-        geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group.getCurrentPose(move_group.getEndEffectorLink());
+        //geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group.getCurrentPose(move_group.getEndEffectorLink());
 
-
+        setRotation(aimPose,center);
+        /*
         aimPose.orientation.x = poseStamped.pose.orientation.x;
         aimPose.orientation.w = poseStamped.pose.orientation.w;
         aimPose.orientation.y = poseStamped.pose.orientation.y;
         aimPose.orientation.z = poseStamped.pose.orientation.z;
-
+        */
         std::cout << "Aim position: " << aimPose.position.x << " / "
                 << aimPose.position.y << " / "
                 << aimPose.position.z << " / "
@@ -69,13 +70,16 @@ public:
         std::cout << "Result " << result.val << std::endl;
 
     }
-    octomap::point3d GetCameraPoint()
+    Vec3f GetCameraPoint()
     {
-        static const std::string PLANNING_GROUP = "robot";
+        static const std::string PLANNING_GROUP = "arm_group";
         moveit::planning_interface::MoveGroupInterface move_group_interface(PLANNING_GROUP);
         moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
         geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group_interface.getCurrentPose(move_group_interface.getEndEffectorLink());
-        octomap::point3d result(poseStamped.pose.position.x,poseStamped.pose.position.y,poseStamped.pose.position.z);
+        Vec3f result;
+        result.x = poseStamped.pose.position.x;
+        result.y = poseStamped.pose.position.y;
+        result.z = poseStamped.pose.position.z;
         return result;
     }
 

@@ -80,7 +80,7 @@ geometry_msgs::PoseArray initPoseMarker(const std::vector<candidateCameraView> &
         setRotation(pose,scanAim);
         poseArray.poses.push_back(pose);
     }
-
+    std::cout << "Array length: " << poseArray.poses.size() << std::endl;
     return poseArray;
 }
 #endif //SRC_MARKERS_INIT_H
