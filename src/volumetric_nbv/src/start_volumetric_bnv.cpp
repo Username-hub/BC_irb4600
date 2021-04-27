@@ -103,7 +103,7 @@ void generateCandiadateViews()
 
     for(float s = 0; s < 360; s+= verticalStep)
     {
-        for(float t = 0; t < 360; t += horizontalStep)
+        for(float t = 30; t < 360; t += horizontalStep)
         {
             candidateCameraView CAV(r, s * PI/180, t * PI/180,xOffset, yOffset, zOffset);
             views.push_back(CAV);
