@@ -49,7 +49,7 @@ Vec3f cameraPos;
 Vec3f center(1.5,0,0.5);
 
 
-Octomap octomap_local(Vec3f(3,3,3),Vec3f(-3,-3,0),0.1f);
+Octomap octomap_local(Vec3f(2,2,2),Vec3f(-2,-2,0),0.1f);
 struct map {
     std::vector<geometry_msgs::Point> maped_points;
 }map_points_list,current_scan;
@@ -63,6 +63,25 @@ void UpdateMarker()
     {
         point_cloud_marker.points.push_back(map_points_list.maped_points.at(i));
     }
+    std::vector<Voxel> voxelMap = octomap_local.getVoxelMap();
+    geometry_msgs::Point p;
+    for(Voxel voxel : voxelMap)
+    {
+        if(voxel.voxelSrate != unmarked) {
+            p.x = voxel.bounds[0].x;
+            p.y = voxel.bounds[0].y;
+            p.z = voxel.bounds[0].z;
+            point_cloud_marker.points.push_back(p);
+        }
+    }
+    /*p.x = 2;
+    p.y = 2;
+    p.z = 2;
+    point_cloud_marker.points.push_back(p);
+    p.x = -2;
+    p.y = -2;
+    p.z = 0;
+    point_cloud_marker.points.push_back(p);*/
     marker_publisher.publish(point_cloud_marker);
 
 }
@@ -115,7 +134,7 @@ void generateCandiadateViews()
 
     for(float s = 0; s < 360; s+= verticalStep)
     {
-        for(float t = 0; t < 360; t += horizontalStep)
+        for(float t = 30; t < 360; t += horizontalStep)
         {
             candidateCameraView CAV(r, s * PI/180, t * PI/180,xOffset, yOffset, zOffset);
             views.push_back(CAV);
@@ -138,7 +157,7 @@ void makeScan()
     {
         map_points_list.maped_points.push_back(current_scan.maped_points.at(i));
     }
-    UpdateMarker();
+    //UpdateMarker();
     robot_state_scan = generate_candidate_view;
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Making Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
@@ -146,6 +165,7 @@ void makeScan()
     MoveControlClass moveControlClass;
     //octomap_local.WriteScanResults(current_scan.maped_points, moveControlClass.GetCameraPoint());
     octomap_local.WriteScanResults(cameraPos,MsgVecToVec3(current_scan.maped_points));
+    UpdateMarker();
     evaluateCameraViews();
     //generateCandiadateViews();
 }
@@ -199,7 +219,6 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
                                       transform.getOrigin().z());
         //MoveControlClass moveControlClass;
         //octomap_local.WriteScanResults(output,cameraPoin3d);
-
         std::cout << "marker publish" << std::endl;
         marker_publisher.publish(point_cloud_marker);
     }
@@ -249,7 +268,7 @@ int main( int argc, char** argv )
             MoveToPose();
             robot_state_scan = making_scan;
         }
-        //sleep(103);
+        sleep(1);
    }
     ros::waitForShutdown();
    //ros::spin();
