@@ -1,6 +1,6 @@
 # Simulation settings for using moveit_sim_controllers
 moveit_sim_hw_interface:
-  joint_model_group: arm_group
+  joint_model_group: robot
   joint_model_group_pose: HOME
 # Settings for ros_control_boilerplate control loop
 generic_hw_control_loop:

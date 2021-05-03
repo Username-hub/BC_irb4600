@@ -44,7 +44,9 @@ visualization_msgs::Marker point_cloud_marker;
 visualization_msgs::Marker position_marker;
 ros::Publisher marker_publisher;
 ros::Publisher position_publisher;
+ros::Publisher target_pose_publisher;
 std::vector<candidateCameraView> views;
+geometry_msgs::Pose target_pose;
 Vec3f cameraPos;
 Vec3f center(1.5,0,0.5);
 
@@ -63,7 +65,8 @@ void UpdateMarker()
     {
         point_cloud_marker.points.push_back(map_points_list.maped_points.at(i));
     }
-    std::vector<Voxel> voxelMap = octomap_local.getVoxelMap();
+
+    /*std::vector<Voxel> voxelMap = octomap_local.getVoxelMap();
     geometry_msgs::Point p;
     for(Voxel voxel : voxelMap)
     {
@@ -73,7 +76,7 @@ void UpdateMarker()
             p.z = voxel.bounds[0].z;
             point_cloud_marker.points.push_back(p);
         }
-    }
+    }*/
     /*p.x = 2;
     p.y = 2;
     p.z = 2;
@@ -86,17 +89,6 @@ void UpdateMarker()
 
 }
 
-
-geometry_msgs::Pose target_pose;
-void MoveToPose()
-{
-    std::cout << "start move" << std::endl;
-    MoveControlClass moveControlClass;
-    //moveControlClass.MoveToPoint(target_pose);
-    //robot_state_scan = making_scan;
-    robot_state_scan = wait_move;
-    moveControlClass.MoveToPoint(target_pose,center);
-}
 void evaluateCameraViews()
 {
     candidateCameraView bestView ;
@@ -117,7 +109,32 @@ void evaluateCameraViews()
     target_pose.position.z = bestView.z;
     //MoveToPose();
     position_publisher.publish(initPoseMarker(views,center));
+    geometry_msgs::PoseStamped target_pose_stamped;
+    target_pose_stamped.pose.position.x = target_pose.position.x;
+    target_pose_stamped.pose.position.y = target_pose.position.y;
+    target_pose_stamped.pose.position.z = target_pose.position.z;
+    setRotationStamped(target_pose_stamped,center);
+    /*target_pose_stamped.pose.orientation.x = target_pose.orientation.x;
+    target_pose_stamped.pose.orientation.y = target_pose.orientation.y;
+    target_pose_stamped.pose.orientation.z = target_pose.orientation.z;
+    target_pose_stamped.pose.orientation.w = target_pose.orientation.w;*/
+    target_pose_stamped.header.frame_id = SOURCE_FRAME;
+    target_pose_publisher.publish(target_pose_stamped);
     robot_state_scan = move_to_pose;
+}
+
+void MoveToPose()
+{
+    std::cout << "start move" << std::endl;
+    MoveControlClass moveControlClass;
+    //moveControlClass.MoveToPoint(target_pose);
+    //robot_state_scan = making_scan;
+    robot_state_scan = wait_move;
+    if(!moveControlClass.MoveToPoint(target_pose,center))
+    {
+        robot_state_scan = evaluating_view;
+        evaluateCameraViews();
+    }
 }
 //TODO: make arrow
 //TODO: remove pose marker
@@ -132,9 +149,9 @@ void generateCandiadateViews()
     float verticalStep = 30.0, horizontalStep = 30.0;
 
 
-    for(float s = 0; s < 360; s+= verticalStep)
+    for(float s = 0; s < 350; s+= verticalStep)
     {
-        for(float t = 30; t < 360; t += horizontalStep)
+        for(float t = 30; t < 350; t += horizontalStep)
         {
             candidateCameraView CAV(r, s * PI/180, t * PI/180,xOffset, yOffset, zOffset);
             views.push_back(CAV);
@@ -259,7 +276,7 @@ int main( int argc, char** argv )
 
     position_publisher = n.advertise<geometry_msgs::PoseArray>("pose_marker", 0);
     //initLineMarker(position_marker);
-
+    target_pose_publisher = n.advertise<geometry_msgs::PoseStamped>("target_pose",0);
     generateCandiadateViews();
     while(ros::ok) {
 

@@ -71,4 +71,18 @@ void setRotation(geometry_msgs::Pose &aimPose, const Vec3f &scanAim)
     aimPose.orientation.w = q.getW();
 }
 
+void setRotationStamped(geometry_msgs::PoseStamped &aimPose, const Vec3f &scanAim)
+{
+    tf::Quaternion q;
+    float yaw = atan2(aimPose.pose.position.x - scanAim.x ,aimPose.pose.position.z - scanAim.z);
+    float roll = sqrt(pow(aimPose.pose.position.x - scanAim.x,2)+pow(aimPose.pose.position.z - scanAim.z,2));
+    float pitch = atan2(roll,aimPose.pose.position.y - scanAim.y);
+    q.setEuler(yaw,pitch,-1.571);
+    q.normalize();
+    aimPose.pose.orientation.x = q.getX();
+    aimPose.pose.orientation.y = q.getY();
+    aimPose.pose.orientation.z = q.getZ();
+    aimPose.pose.orientation.w = q.getW();
+}
+
 #endif //SRC_POINT_TRANSLATION_H

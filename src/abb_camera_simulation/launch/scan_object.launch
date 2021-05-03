@@ -1,0 +1,4 @@
+<launch>
+    <!--<param name="robot_description" textfile="$(find abb_camera_simulation)/meshes/abb_irb/model.sdf" />-->
+    <param name="box_object" command="rosrun gazebo_ros spawn_model -file `pwd`/src/abb_camera_simulation/urdf/scan_object.urdf -urdf -z 1 -model my_object" />
+</launch>
