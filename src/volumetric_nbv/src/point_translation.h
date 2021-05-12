@@ -85,4 +85,11 @@ void setRotationStamped(geometry_msgs::PoseStamped &aimPose, const Vec3f &scanAi
     aimPose.pose.orientation.w = q.getW();
 }
 
+float getDistVec3f(const Vec3f &a, const Vec3f &b)
+{
+    return sqrt(pow(b.x - a.x,2) + pow(b.y - a.y,2) + pow(b.z - a.z,2));
+}
+
+
+
 #endif //SRC_POINT_TRANSLATION_H

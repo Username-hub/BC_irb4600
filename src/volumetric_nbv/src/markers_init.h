@@ -33,9 +33,9 @@ void initCloudMarker(visualization_msgs::Marker &point_cloud_marker)
     point_cloud_marker.pose.orientation.y = 0.0;
     point_cloud_marker.pose.orientation.z = 0.0;
     point_cloud_marker.pose.orientation.w = 1.0;
-    point_cloud_marker.scale.x = 0.01;
-    point_cloud_marker.scale.y = 0.01;
-    point_cloud_marker.scale.z = 0.01;
+    point_cloud_marker.scale.x = 0.025;
+    point_cloud_marker.scale.y = 0.025;
+    point_cloud_marker.scale.z = 0.025;
     point_cloud_marker.color.a = 1.0; // Don't forget to set the alpha!
     point_cloud_marker.color.r = 0.0;
     point_cloud_marker.color.g = 1.0;
@@ -58,9 +58,9 @@ void initLineMarker(visualization_msgs::Marker &position_marker)
     position_marker.pose.orientation.y = 0.0;
     position_marker.pose.orientation.z = 0.0;
     position_marker.pose.orientation.w = 1.0;
-    position_marker.scale.x = 0.01;
-    position_marker.scale.y = 0.01;
-    position_marker.scale.z = 0.01;
+    position_marker.scale.x = 0.025;
+    position_marker.scale.y = 0.025;
+    position_marker.scale.z = 0.025;
     position_marker.color.a = 1.0; // Don't forget to set the alpha!
     position_marker.color.r = 0.0;
     position_marker.color.g = 0.0;

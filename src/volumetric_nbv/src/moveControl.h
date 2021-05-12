@@ -31,6 +31,9 @@ private:
 public:
     MoveControlClass()
     {
+
+        //move_group =  moveit::planning_interface::MoveGroupInterface(PLANNING_GROUP);
+        //move_group (PLANNING_GROUP);
     }
     bool MoveToPoint(geometry_msgs::Pose aimPose,const Vec3f &center)
     {
@@ -51,23 +54,6 @@ public:
         box_pose.position.y = 0.0;
         box_pose.position.z = 0.5;
 
-
-
-        const moveit::core::JointModelGroup* joint_model_group =
-                move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
-
-        moveit::core::RobotModelConstPtr kinematic_model(move_group.getRobotModel());
-        moveit::core::RobotState rs(kinematic_model);
-
-        kinematics::KinematicsQueryOptions kinematicsQueryOptions;
-
-        moveit::core::GroupStateValidityCallbackFn groupStateValidityCallbackFn;
-        bool IKResult = rs.setFromIK(joint_model_group,aimPose,1.0,groupStateValidityCallbackFn,kinematicsQueryOptions);
-        std::cout << "SetFromIK: " << IKResult << std::endl;
-        if(!IKResult)
-        {
-            return false;
-        }
         move_group.clearPoseTarget();
 
         //geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group.getCurrentPose(move_group.getEndEffectorLink());
@@ -84,11 +70,11 @@ public:
                 << std::endl;
         move_group.setPoseTarget(aimPose);
 
-        moveit_msgs::Constraints constr;
+        /*moveit_msgs::Constraints constr;
         moveit_msgs::PositionConstraint  positionConstraint;
         positionConstraint.constraint_region.primitives.push_back(primitive);
         constr.position_constraints.push_back(positionConstraint);
-        move_group.setPathConstraints(constr);
+        move_group.setPathConstraints(constr);*/
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
         bool success = (move_group.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
@@ -101,23 +87,52 @@ public:
         return true;
 
     }
-    Vec3f GetCameraPoint()
+    void getReachablePositions(const std::vector<candidateCameraView> &generatedViews,
+                               std::vector<candidateCameraView> &Reachable,
+                               std::vector<candidateCameraView> &Unreachable)
     {
-        static const std::string PLANNING_GROUP = "arm_group";
-        moveit::planning_interface::MoveGroupInterface move_group_interface(PLANNING_GROUP);
-        moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-        geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group_interface.getCurrentPose(move_group_interface.getEndEffectorLink());
-        Vec3f result;
-        result.x = poseStamped.pose.position.x;
-        result.y = poseStamped.pose.position.y;
-        result.z = poseStamped.pose.position.z;
-        return result;
+        static const std::string PLANNING_GROUP = "robot";
+        moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+        const moveit::core::JointModelGroup* joint_model_group =
+                move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+        moveit::core::RobotModelConstPtr kinematic_model(move_group.getRobotModel());
+        moveit::core::RobotState rs(kinematic_model);
+
+        kinematics::KinematicsQueryOptions kinematicsQueryOptions;
+
+        //moveit::core::GroupStateValidityCallbackFn groupStateValidityCallbackFn;
+        planning_scene::PlanningScene planning_scene(kinematic_model);
+        moveit::core::GroupStateValidityCallbackFn groupStateValidityCallbackFn = boost::bind(&MoveControlClass::isIKSolutionValid,this, &planning_scene,_1,_2,_3);
+
+
+        for(candidateCameraView view : generatedViews)
+        {
+            if(rs.setFromIK(joint_model_group,view.GetMsgPose(),1.0,groupStateValidityCallbackFn,kinematicsQueryOptions))
+            {
+                Reachable.push_back(view);
+            }
+            else
+            {
+                Unreachable.push_back(view);
+            }
+        }
     }
 
-    bool groupStateValidityTest()
+    const bool isIKSolutionValid(const planning_scene::PlanningScene* planning_scene,
+                                               robot_state::RobotState* state,
+                                               const robot_model::JointModelGroup* jmg,
+                                               const double* ik_solution)
+    {
+        state->setJointGroupPositions(jmg, ik_solution);
+        state->update();
+        return (!planning_scene || !planning_scene->isStateColliding(*state, jmg->getName()));
+
+    }
+
+    /*bool groupStateValidityTest()
     {
         return true;
-    }
+    }*/
 
 };
 #endif //SRC_MOVECONTROL_H

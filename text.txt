@@ -1,0 +1,7 @@
+parametre (pocet shipoc, polomer etc.) : Done
+normalizacia (dlzka cesty a pocet kociek) : Done
+prepinanie metod(pocet kociek v okoli alebo raycasting) : Done
+nastavenie vahy : Done
+
+implemenacia:
+dokumentacia procesu

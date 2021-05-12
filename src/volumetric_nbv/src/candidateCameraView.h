@@ -10,7 +10,9 @@ public:
     float x;
     float y;
     float z;
+    //Camera pos in Vec3f
     Vec3f point;
+    //Object position
     Vec3f center;
     candidateCameraView()
     {
@@ -35,6 +37,16 @@ public:
         result.x = x;
         result.y = y;
         result.z = z;
+        return result;
+    }
+
+    geometry_msgs::Pose GetMsgPose()
+    {
+        geometry_msgs::Pose result;
+        result.position.x = x;
+        result.position.y = y;
+        result.position.z = z;
+        setRotation(result,center);
         return result;
     }
 };
