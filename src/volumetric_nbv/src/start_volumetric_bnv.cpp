@@ -252,15 +252,19 @@ int main( int argc, char* argv[] )
     ros::init(argc, argv, "start_volumetric_bnv");
     std::string param;
     ros::NodeHandle n;
-    std::string str = argv[1];
+    /*std::string str = argv[1];
     rad = std::stof(str);
     str = argv[2];
     Step = std::stof(str);
     str = argv[3];
     evalType = str[0];
     str = argv[4];
-    octomap_local.setDistWeight(std::stof(str));
+    octomap_local.setDistWeight(std::stof(str));*/
 
+    // TODO nastav si spravne default hodnoty a pridaj ostatne parametre
+    n.param<float>("radius",rad, 10.0);
+    ROS_INFO("Parameter radius: %f", rad);
+    
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
