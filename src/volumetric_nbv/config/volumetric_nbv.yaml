@@ -1,0 +1,5 @@
+radius: 1.5
+step: 30
+eval_type: s
+weigth_dist: 0.0
+weigth_voxel: 1.0

@@ -43,10 +43,12 @@ class Octomap
 {
 private:
     std::vector<Voxel> voxelMap;
-    float radius = 0.25;
+    float radius = 1.1;
     float maxVoxelPerView;
-    float maxDist = 4.2;
+    float maxDist = 1.5;
     float distanceWeight = 0.2;
+    float voxelWeight = 1.0;
+    int maxVoxelPerViewRay;
 public:
     const std::vector<Voxel> &getVoxelMap() const {
         return voxelMap;
@@ -75,7 +77,13 @@ public:
             {
                 maxVoxelPerView++;
             }
+            Vec3f Hit;
+            if(voxelMap[j].CheckLineBox(max,min,Hit))
+            {
+                maxVoxelPerViewRay++;
+            }
         }
+        maxVoxelPerViewRay = maxVoxelPerViewRay/2;
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cout<<"Octomap generation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
     }
@@ -93,9 +101,22 @@ public:
             }
         }
     }
-    void setDistWeight(float d)
+    void setWeights(float d, float n)
     {
         distanceWeight = d;
+        voxelWeight = n;
+    }
+
+    float SetMaxDist(const std::vector<candidateCameraView> &views,const Vec3f &cameraPos)
+    {
+        float res = 0;
+        for(candidateCameraView v : views)
+        {
+            float x = getDistVec3f(v.point,cameraPos);
+            if(x > res)
+                res = x;
+        }
+        return res;
     }
     bool GetVoxelByPoint(Voxel &result,Vec3f point)
     {
@@ -155,7 +176,7 @@ public:
         }
     }
 
-    void WriteScanResults(const Vec3f &camera_pos, const std::vector<Vec3f> &scan_points)
+    void WriteScanResults(const Vec3f &camera_pos, const std::vector<Vec3f> &scan_points, float &scanedPer)
     {
         std::cout<<"Write scan results START"<<std::endl;
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
@@ -192,7 +213,8 @@ public:
                     break;
             }
         }
-        std::cout << "Unmarked: " << unm << " / None: " << noneVex << " / Occupied: " << occ << std::endl;
+        scanedPer = ((float)(occ + noneVex))/((float)voxelMap.size());
+        std::cout << "Unmarked: " << unm << " / None: " << noneVex << " / Occupied: " << occ << " / %: " <<  scanedPer << std::endl;
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cout<<"Write scan results END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
     }
@@ -200,11 +222,13 @@ public:
     candidateCameraView GetBestCameraViewSphere(const std::vector<candidateCameraView> &views,const Vec3f &cameraPos, int &pos)
     {
 
+        std::cout << "Views num before: " << views.size() - 1 << std::endl;
         std::cout<<"Sphere Camera view evaluation START"<<std::endl;
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         candidateCameraView result = views[0];
-
-        float currentBest = 0;
+        maxDist = SetMaxDist(views,cameraPos);
+        float currentBest = 0 - maxDist;
+        pos = 0;
         for(int i =0 ;i < views.size(); i++)
         {
             float mark = 0;
@@ -221,11 +245,17 @@ public:
             }
             //scale  variable 𝑥 into a range [𝑎,𝑏]
             //𝑥_𝑛𝑜𝑟𝑚𝑎𝑙𝑖𝑧𝑒𝑑=(𝑏−𝑎)(𝑥−𝑚𝑖𝑛(𝑥))/(𝑚𝑎𝑥(𝑥)−𝑚𝑖𝑛(𝑥))+𝑎
-            float mark_normalized = (100) * (mark)/(maxVoxelPerView);
-            float dist_normalized = (100) * ((getDistVec3f(views[i].point, cameraPos))/maxDist);
-            //std::cout << "Mark: " << mark_normalized << " / " << mark << " / " << maxVoxelPerView << " / " << (mark)/(maxVoxelPerView) << std::endl;
-            //std::cout << "Mark: " << dist_normalized << " / " << getDistVec3f(views[i].point, cameraPos) << " / " << maxDist << " / " << ((getDistVec3f(views[i].point, cameraPos))/maxDist) << std::endl;
-            float finalMark = mark_normalized - distanceWeight * dist_normalized;
+            float mark_normalized = (mark)/(maxVoxelPerView);
+            float dist_normalized =  ((getDistVec3f(views[i].point, cameraPos))/maxDist);
+            //std::cout << "Voxel: " << mark_normalized << " / " << mark << " / " << maxVoxelPerView << " / " << (mark)/(maxVoxelPerView) << std::endl;
+            //std::cout << "Dist: " << dist_normalized << " / " << getDistVec3f(views[i].point, cameraPos) << " / " << maxDist << " / " << ((getDistVec3f(views[i].point, cameraPos))/maxDist) << std::endl;
+            if(mark_normalized > 1.0 || mark_normalized < 0 || dist_normalized > 1.0 || dist_normalized < 0)
+            {
+                std::cout << "Mark: " << mark_normalized << " / " << mark << " / " << maxVoxelPerView << " / " << (mark)/(maxVoxelPerView) << std::endl;
+                std::cout << "Mark: " << dist_normalized << " / " << getDistVec3f(views[i].point, cameraPos) << " / " << maxDist << " / " << ((getDistVec3f(views[i].point, cameraPos))/maxDist) << std::endl;
+
+            }
+            float finalMark = voxelWeight * mark_normalized - distanceWeight * dist_normalized;
             if(currentBest < finalMark)
             {
                 result = views[i];
@@ -233,9 +263,10 @@ public:
                 currentBest = finalMark;
             }
         }
-        std::cout << "Mark: " << currentBest << " / Pos " << pos << std::endl;
+        //std::cout << "Final: " << (float)currentBest << " / Pos " << pos << " from: " << views.size() - 1 << " weight: " << voxelWeight << " / " << distanceWeight << std::endl;
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cout<<"Camera view evaluation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+        std::cout << "Views num after: " << views.size() - 1 << std::endl;
         return result;
     }
     candidateCameraView GetBestCameraViewRay(const std::vector<candidateCameraView> &views,const Vec3f &cameraPos,const Vec3f &center, int &pos)
@@ -244,7 +275,9 @@ public:
         std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
         candidateCameraView result = views[0];
 
-        float currentBest = 0;
+        maxDist = SetMaxDist(views,cameraPos);
+        float currentBest = 0 - maxDist;
+        pos = 0;
         for(int i =0 ;i < views.size(); i++)
         {
             float mark = 0;
@@ -253,7 +286,7 @@ public:
                 if(voxelMap[j].voxelSrate == unmarked)
                 {
                     Vec3f Hit;
-                    if(voxelMap[j].CheckLineBox(cameraPos,center,Hit))
+                    if(voxelMap[j].CheckLineBox(views[i].point,center,Hit))
                     {
                         mark++;
                     }
@@ -261,11 +294,17 @@ public:
             }
             //scale  variable 𝑥 into a range [𝑎,𝑏]
             //𝑥_𝑛𝑜𝑟𝑚𝑎𝑙𝑖𝑧𝑒𝑑=(𝑏−𝑎)(𝑥−𝑚𝑖𝑛(𝑥))/(𝑚𝑎𝑥(𝑥)−𝑚𝑖𝑛(𝑥))+𝑎
-            float mark_normalized = (100) * (mark)/(maxVoxelPerView);
-            float dist_normalized = (100) * ((getDistVec3f(views[i].point, cameraPos))/maxDist);
+            float mark_normalized = (mark)/(maxVoxelPerViewRay);
+            float dist_normalized =  ((getDistVec3f(views[i].point, cameraPos))/maxDist);
             //std::cout << "Mark: " << mark_normalized << " / " << mark << " / " << maxVoxelPerView << " / " << (mark)/(maxVoxelPerView) << std::endl;
             //std::cout << "Mark: " << dist_normalized << " / " << getDistVec3f(views[i].point, cameraPos) << " / " << maxDist << " / " << ((getDistVec3f(views[i].point, cameraPos))/maxDist) << std::endl;
-            float finalMark = mark_normalized - distanceWeight * dist_normalized;
+            if(mark_normalized > 1.0 || mark_normalized < 0 || dist_normalized > 1.0 || dist_normalized < 0)
+            {
+                std::cout << "Mark: " << mark_normalized << " / " << mark << " / " << maxVoxelPerView << " / " << (mark)/(maxVoxelPerView) << std::endl;
+                std::cout << "Mark: " << dist_normalized << " / " << getDistVec3f(views[i].point, cameraPos) << " / " << maxDist << " / " << ((getDistVec3f(views[i].point, cameraPos))/maxDist) << std::endl;
+
+            }
+            float finalMark = voxelWeight * mark_normalized - distanceWeight * dist_normalized;
             if(currentBest < finalMark)
             {
                 result = views[i];
@@ -273,7 +312,7 @@ public:
                 currentBest = finalMark;
             }
         }
-        std::cout << "Mark: " << currentBest << " / Pos " << pos << std::endl;
+        //std::cout << "Mark: " << currentBest << " / Pos " << pos << " from: " << views.size() - 1 << std::endl;
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
         std::cout<<"Camera view evaluation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
         return result;

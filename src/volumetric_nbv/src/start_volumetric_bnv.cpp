@@ -41,16 +41,16 @@ ros::Publisher target_pose_publisher;
 std::vector<candidateCameraView> views;
 geometry_msgs::Pose target_pose;
 Vec3f cameraPos;
-Vec3f center(1.5,0,0.5);
+Vec3f center(1.6,0,0.5);
 MoveControlClass moveControlClass;
 
 
-Octomap octomap_local(Vec3f(3,1,1.2),Vec3f(-0.5,-1,-0.2),0.1f);
+Octomap octomap_local(Vec3f(3,1,0.9),Vec3f(0.2,-1,0),0.1f);
 struct map {
     std::vector<geometry_msgs::Point> maped_points;
 }map_points_list,current_scan;
 
-enum StateOfRobot{ initial_scan, generate_candidate_view, evaluating_view, move_to_pose, wait_move, making_scan, wait} robot_state_scan;
+enum StateOfRobot{ initial_scan, generate_candidate_view, evaluating_view, move_to_pose, wait_move, making_scan, wait,program_end} robot_state_scan;
 
 void UpdateMarker()
 {
@@ -69,6 +69,12 @@ void UpdateMarker()
 char evalType = 's';
 void evaluateCameraViews()
 {
+
+    if(views.size() < 1)
+    {
+        robot_state_scan = program_end;
+        return;
+    }
     candidateCameraView bestView ;
     int bestViewNum;
     if(evalType == 'r')
@@ -81,6 +87,7 @@ void evaluateCameraViews()
     }
 
     views.erase(views.begin() + bestViewNum);
+
     geometry_msgs::Point viewPoint;
     viewPoint.x = bestView.x;
     viewPoint.y = bestView.y;
@@ -103,18 +110,18 @@ void evaluateCameraViews()
     target_pose_publisher.publish(target_pose_stamped);
     robot_state_scan = move_to_pose;
 }
-
+float dist = 0;
 void MoveToPose()
 {
     std::cout << "start move" << std::endl;
     //moveControlClass.MoveToPoint(target_pose);
     //robot_state_scan = making_scan;
     robot_state_scan = wait_move;
-    if(!moveControlClass.MoveToPoint(target_pose,center))
+    if(moveControlClass.MoveToPoint(target_pose,center))
     {
-        robot_state_scan = evaluating_view;
-        evaluateCameraViews();
+        dist += getDistVec3f(cameraPos, Vec3f(target_pose.position.x,target_pose.position.y,target_pose.position.z));
     }
+
 }
 
 float Step = 30.0;
@@ -128,13 +135,13 @@ void generateCandiadateViews()
     float xOffset = 1.5, yOffset = 0.0 , zOffset = 0.5;
     std::vector<candidateCameraView> generatedViews;
 
-    for(float s = 0; s < 350; s+= Step)
+    for(float s = 30; s < 350; s+= Step)
     {
         for(float t = 30; t < 350; t += Step)
         {
-            if(t > 130 && t < 250)
+            if(t > 100 && t < 250)
             {
-                t = 250;
+                t = 260;
             }
             candidateCameraView CAV(rad, s * PI/180, t * PI/180,xOffset, yOffset, zOffset);
             generatedViews.push_back(CAV);
@@ -164,12 +171,19 @@ void makeScan()
     }
     //UpdateMarker();
     //robot_state_scan = generate_candidate_view;
-    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-    std::cout<<"Making Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+
 
     MoveControlClass moveControlClass;
     //octomap_local.WriteScanResults(current_scan.maped_points, moveControlClass.GetCameraPoint());
-    octomap_local.WriteScanResults(cameraPos,MsgVecToVec3(current_scan.maped_points));
+    float scanedPer;
+    octomap_local.WriteScanResults(cameraPos,MsgVecToVec3(current_scan.maped_points),scanedPer);
+    if(scanedPer > 0.8)
+    {
+        robot_state_scan = program_end;
+        return;
+    }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout<<"Making Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
     //UpdateMarker();
     evaluateCameraViews();
     //generateCandiadateViews();
@@ -248,19 +262,45 @@ void statusCallback(const actionlib_msgs::GoalStatusArray::ConstPtr& msg)
 
 int main( int argc, char* argv[] )
 {
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
     robot_state_scan = initial_scan;
     ros::init(argc, argv, "start_volumetric_bnv");
     std::string param;
     ros::NodeHandle n;
-    std::string str = argv[1];
+    /*std::string str = argv[1];
     rad = std::stof(str);
     str = argv[2];
     Step = std::stof(str);
     str = argv[3];
     evalType = str[0];
-    str = argv[4];
-    octomap_local.setDistWeight(std::stof(str));
 
+    str = argv[4];
+    distWeigth =std::stof(str);
+    str = argv[5];
+    voxelWeigth =std::stof(str);
+    */
+    n.param<float>("radius",rad, 1.0);
+    ROS_INFO("Parameter radius: %f", rad);
+
+    n.param<float>("step",Step, 30.0);
+    ROS_INFO("Parameter step: %f", Step);
+
+    //n.param<char>("eval_type",evalType, 's');
+    std::string str;
+    n.getParam("eval_type",str);
+    evalType = str[0];
+    ROS_INFO("Parameter eval_type: %c", evalType);
+
+    float distWeigth,voxelWeigth;
+    n.param<float>("weigth_dist",distWeigth, 0.0);
+    ROS_INFO("Parameter weigth_dist: %f", distWeigth);
+
+    n.param<float>("weigth_voxel",voxelWeigth, 1.0);
+    ROS_INFO("Parameter weigth_voxel: %f", voxelWeigth);
+    octomap_local.setWeights(distWeigth,voxelWeigth);
+
+    int numberOfPos = 0;
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
@@ -285,10 +325,19 @@ int main( int argc, char* argv[] )
         if (robot_state_scan == move_to_pose) {
             robot_state_scan = wait_move;
             MoveToPose();
+            numberOfPos++;
             robot_state_scan = making_scan;
         }
-        sleep(1);
+        if (robot_state_scan == program_end)
+        {
+            break;
+        }
+        sleep(2);
    }
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout<<"Program time" << " after: " << std::chrono::duration_cast<std::chrono::seconds>(end - begin).count() << "[s]" <<
+    "Number of pos: " << numberOfPos <<std::endl
+    << " Distance: " << dist << std::endl;
 
 }
 

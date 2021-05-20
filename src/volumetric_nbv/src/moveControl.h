@@ -81,9 +81,9 @@ public:
 
         ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success ? "" : "FAILED");
         //move_group.plan(my_plan);
-
-        moveit::planning_interface::MoveItErrorCode result = move_group.move();
-        std::cout << "Result " << result.val << std::endl;
+        if(success)
+            moveit::planning_interface::MoveItErrorCode result = move_group.move();
+        //std::cout << "Result " << result.val << std::endl;
         return true;
 
     }
