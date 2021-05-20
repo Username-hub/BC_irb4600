@@ -1,0 +1,8 @@
+<launch>
+  <rosparam command="load" file="$(find volumetric_nbv)/config/volumetric_nbv.yaml"/>
+
+  <node name="volumetric_nbv" pkg="volumetric_nbv" type="start_volumetric_bnv">
+
+  </node>
+
+</launch>
