@@ -14,9 +14,6 @@
 
 void pixelTo3DPoint(const sensor_msgs::PointCloud2 &pCloud, const int u, const int v, geometry_msgs::Point &p)
 {
-// get width and height of 2D point cloud data
-    int width = pCloud.width;
-    int height = pCloud.height;
 
 // Convert from u (column / width), v (row/height) to position in array
 // where X,Y,Z data starts

@@ -1,8 +1,4 @@
-#include <math.h>
-
 #include <map>
-#include <set>
-#include <list>
 #include <queue>
 #include <chrono>
 #include <vector>
@@ -18,6 +14,7 @@
 #include "markers_init.h"
 #include "ray_box_collider.h"
 #include "octomap.h"
+#include "octomap.cpp"
 #include "candidateCameraView.h"
 #include "moveControl.h"
 
@@ -54,16 +51,8 @@ enum StateOfRobot{ initial_scan, generate_candidate_view, evaluating_view, move_
 
 void UpdateMarker()
 {
-    /*point_cloud_marker.points.clear();
-    for(int i = 0; i < map_points_list.maped_points.size(); i++)
-    {
-        point_cloud_marker.points.push_back(map_points_list.maped_points.at(i));
-    }
-    marker_publisher.publish(point_cloud_marker);*/
     octomap_local.GetMarkedPoints(point_cloud_marker);
     marker_publisher.publish(point_cloud_marker);
-
-
 }
 
 char evalType = 's';
@@ -92,14 +81,14 @@ void evaluateCameraViews()
     viewPoint.x = bestView.x;
     viewPoint.y = bestView.y;
     viewPoint.z = bestView.z;
-    //marker_publisher.publish(point_cloud_marker);
+
     setRotation(target_pose,center);
     std::cout << viewPoint.x << " " << viewPoint.y << " " << viewPoint.z << std::endl;
-    //geometry_msgs::Pose bestPose;
+
     target_pose.position.x = bestView.x;
     target_pose.position.y = bestView.y;
     target_pose.position.z = bestView.z;
-    //MoveToPose();
+
     position_publisher.publish(initPoseMarker(views,center));
     geometry_msgs::PoseStamped target_pose_stamped;
     target_pose_stamped.pose.position.x = target_pose.position.x;
@@ -114,8 +103,6 @@ float dist = 0;
 void MoveToPose()
 {
     std::cout << "start move" << std::endl;
-    //moveControlClass.MoveToPoint(target_pose);
-    //robot_state_scan = making_scan;
     robot_state_scan = wait_move;
     if(moveControlClass.MoveToPoint(target_pose,center))
     {
@@ -145,15 +132,11 @@ void generateCandiadateViews()
             }
             candidateCameraView CAV(rad, s * PI/180, t * PI/180,xOffset, yOffset, zOffset);
             generatedViews.push_back(CAV);
-            //views.push_back(CAV);
-            //position_marker.points.push_back(CAV.GetMessagePoint());
-
         }
     }
 
     std::vector<candidateCameraView> unreachableViews;
     moveControlClass.getReachablePositions(generatedViews, views,unreachableViews);
-    //position_publisher.publish(position_marker);
     position_publisher_un.publish(initPoseMarker(unreachableViews,center));
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Candidate generation END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
@@ -169,12 +152,8 @@ void makeScan()
     {
         map_points_list.maped_points.push_back(current_scan.maped_points.at(i));
     }
-    //UpdateMarker();
-    //robot_state_scan = generate_candidate_view;
-
 
     MoveControlClass moveControlClass;
-    //octomap_local.WriteScanResults(current_scan.maped_points, moveControlClass.GetCameraPoint());
     float scanedPer;
     octomap_local.WriteScanResults(cameraPos,MsgVecToVec3(current_scan.maped_points),scanedPer);
     if(scanedPer > 0.8)
@@ -184,9 +163,9 @@ void makeScan()
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::cout<<"Making Scan END" << " after: " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-    //UpdateMarker();
+
     evaluateCameraViews();
-    //generateCandiadateViews();
+
 }
 
 
@@ -228,7 +207,6 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
                 finalPoint.y = stamped_point2.y();
                 finalPoint.z = stamped_point2.z();
                 current_scan.maped_points.push_back(finalPoint);
-                //point_cloud_marker.points.push_back(finalPoint);
             }
         }
         tf_listner.waitForTransform(SOURCE_FRAME, TARGET_FRAME, ros::Time(0), ros::Duration(5.0));
@@ -236,19 +214,13 @@ void cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
         tf_listner.lookupTransform(SOURCE_FRAME, TARGET_FRAME, ros::Time(0), transform);
         cameraPos = Vec3f(transform.getOrigin().x(),transform.getOrigin().y(),
                                       transform.getOrigin().z());
-        //MoveControlClass moveControlClass;
-        //octomap_local.WriteScanResults(output,cameraPoin3d);
         std::cout << "marker publish" << std::endl;
-        //marker_publisher.publish(point_cloud_marker);
     }
     //Call initial scan function
     if(robot_state_scan == initial_scan || robot_state_scan == making_scan)
     {
         makeScan();
     }
-
-    // Publish the data.
-    //pub.publish (output);
 }
 
 void statusCallback(const actionlib_msgs::GoalStatusArray::ConstPtr& msg)
@@ -268,25 +240,12 @@ int main( int argc, char* argv[] )
     ros::init(argc, argv, "start_volumetric_bnv");
     std::string param;
     ros::NodeHandle n;
-    /*std::string str = argv[1];
-    rad = std::stof(str);
-    str = argv[2];
-    Step = std::stof(str);
-    str = argv[3];
-    evalType = str[0];
-
-    str = argv[4];
-    distWeigth =std::stof(str);
-    str = argv[5];
-    voxelWeigth =std::stof(str);
-    */
     n.param<float>("radius",rad, 1.0);
     ROS_INFO("Parameter radius: %f", rad);
 
     n.param<float>("step",Step, 30.0);
     ROS_INFO("Parameter step: %f", Step);
 
-    //n.param<char>("eval_type",evalType, 's');
     std::string str;
     n.getParam("eval_type",str);
     evalType = str[0];
@@ -304,7 +263,6 @@ int main( int argc, char* argv[] )
     ros::AsyncSpinner spinner(1);
     spinner.start();
 
-    // /kinect/depth/points
     ros::Subscriber depth_camera_subscriber = n.subscribe("kinect/depth/points",1, cloud_cb);
 
     ros::Rate r(1);
@@ -314,7 +272,6 @@ int main( int argc, char* argv[] )
 
     position_publisher = n.advertise<geometry_msgs::PoseArray>("pose_marker", 0);
     position_publisher_un = n.advertise<geometry_msgs::PoseArray>("pose_marker_un", 0);
-    //initLineMarker(position_marker);
     target_pose_publisher = n.advertise<geometry_msgs::PoseStamped>("target_pose",0);
     robot_state_scan = generate_candidate_view;
     while(ros::ok) {

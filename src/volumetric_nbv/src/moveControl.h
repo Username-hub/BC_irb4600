@@ -56,8 +56,6 @@ public:
 
         move_group.clearPoseTarget();
 
-        //geometry_msgs::PoseStamped_<std::allocator<void>> poseStamped = move_group.getCurrentPose(move_group.getEndEffectorLink());
-
         setRotation(aimPose,center);
         std::cout << "Aim position: " << aimPose.position.x << " / "
                 << aimPose.position.y << " / "
@@ -70,20 +68,14 @@ public:
                 << std::endl;
         move_group.setPoseTarget(aimPose);
 
-        /*moveit_msgs::Constraints constr;
-        moveit_msgs::PositionConstraint  positionConstraint;
-        positionConstraint.constraint_region.primitives.push_back(primitive);
-        constr.position_constraints.push_back(positionConstraint);
-        move_group.setPathConstraints(constr);*/
         moveit::planning_interface::MoveGroupInterface::Plan my_plan;
 
         bool success = (move_group.plan(my_plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
 
         ROS_INFO_NAMED("tutorial", "Visualizing plan 1 (pose goal) %s", success ? "" : "FAILED");
-        //move_group.plan(my_plan);
         if(success)
             moveit::planning_interface::MoveItErrorCode result = move_group.move();
-        //std::cout << "Result " << result.val << std::endl;
+
         return true;
 
     }
@@ -100,7 +92,6 @@ public:
 
         kinematics::KinematicsQueryOptions kinematicsQueryOptions;
 
-        //moveit::core::GroupStateValidityCallbackFn groupStateValidityCallbackFn;
         planning_scene::PlanningScene planning_scene(kinematic_model);
         moveit::core::GroupStateValidityCallbackFn groupStateValidityCallbackFn = boost::bind(&MoveControlClass::isIKSolutionValid,this, &planning_scene,_1,_2,_3);
 
@@ -128,11 +119,6 @@ public:
         return (!planning_scene || !planning_scene->isStateColliding(*state, jmg->getName()));
 
     }
-
-    /*bool groupStateValidityTest()
-    {
-        return true;
-    }*/
 
 };
 #endif //SRC_MOVECONTROL_H

@@ -36,7 +36,7 @@ void initCloudMarker(visualization_msgs::Marker &point_cloud_marker)
     point_cloud_marker.scale.x = 0.025;
     point_cloud_marker.scale.y = 0.025;
     point_cloud_marker.scale.z = 0.025;
-    point_cloud_marker.color.a = 1.0; // Don't forget to set the alpha!
+    point_cloud_marker.color.a = 1.0;
     point_cloud_marker.color.r = 0.0;
     point_cloud_marker.color.g = 1.0;
     point_cloud_marker.color.b = 0.0;
